@@ -1,0 +1,8 @@
+# Swap, backup files
+*~
+*.swp
+*.swx
+*.swo
+
+# Compiled python files
+*.pyc
