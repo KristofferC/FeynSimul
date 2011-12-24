@@ -1,0 +1,44 @@
+# A simple run on a Harmonic Oscillator. The kernel is called once and the
+# mean of the energy operator is printed. The bisection method with threads
+# working in parallel is used
+
+import os
+import sys
+import numpy as np
+
+sys.path.append(sys.path[0] + "/../src/")
+from run_params import *
+from host import *
+
+# Import the harmonic oscillator class
+sys.path.append(sys.path[0] + "/../src/physical_systems/")
+from harm_osc import *
+
+# Create the physical system
+HO_syst = HarmOsc()
+
+# Set the run parameters
+HO_runparams = RunParams()
+HO_runparams.nbrOfWalkers = 448
+HO_runparams.N = 128
+HO_runparams.S = 5
+HO_runparams.beta = 15
+HO_runparams.operatorRuns = 10
+HO_runparams.metroStepsPerOperatorRun = 10
+HO_runparams.enableBisection = True
+HO_runparams.enableParallelizePath = True
+
+# Set the operator
+operators = (HO_syst.energyOp,)
+
+# Load kernel
+HO_kernelEnvironment = loadKernel(HO_syst, HO_runparams, operators)
+
+# Run kernel
+HO_kernelResults = runKernel(HO_kernelEnvironment)
+
+# Print the results
+print "Mean: " + str(HO_kernelResults.operatorMean[0])
+print "Standard error: " + str(HO_kernelResults.operatorStandardError)
+print "Time for GPU to finish calculations: " + str(HO_kernelResults.runTime)
+
