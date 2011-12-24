@@ -1,16 +1,16 @@
-##############################################################################
-# ______________________________________________________________________________
-# Authors:     Kristoffer Carlsson - kricarl@student.chalmers.se 
+#############################################################################
+# ___________________________________________________________________________
+# Authors:     Kristoffer Carlsson - kricarl@student.chalmers.se
 #              Patric Holmvall - holmvall@student.chalmers.se
 #              Petter Saterskog - spetter@student.chalmers.se
-#               
+#
 # Date:        2011-07-29
 #
 
 """
 
 """
-__docformat__ = 'epytext en' 
+__docformat__ = 'epytext en'
 
 
 import sys
@@ -28,7 +28,7 @@ import pyopencl.clmath
 from pimc_kernel import PIMCKernel
 
 
-def loadKernel(system,RP):
+def loadKernel(system, RP):
     """
     Loads the kernel to the GPU and readies it to be run.
 
@@ -46,12 +46,15 @@ def loadKernel(system,RP):
 
     pimcKernel = PIMCKernel()
 
-    if  not RP.nbrOfWalkers/RP.nbrOfWalkersPerWorkGroup*RP.nbrOfWalkersPerWorkGroup==RP.nbrOfWalkers:
-        raise Exception("The number of walkers must be a multiple of the number of walkers per work group.")
-        
-    if  RP.nbrOfWalkers<RP.nbrOfWalkersPerWorkGroup:
-        raise Exception("The number of walkers per group must be less than or equal to the total number of walkers")        
-        
+    if not (RP.nbrOfWalkers / RP.nbrOfWalkersPerWorkGroup *
+           RP.nbrOfWalkersPerWorkGroup == RP.nbrOfWalkers):
+        raise Exception("The number of walkers must be a multiple "
+                        "of the number of walkers per work group.")
+
+    if  RP.nbrOfWalkers < RP.nbrOfWalkersPerWorkGroup:
+        raise Exception("The number of walkers per group must be less "
+                        "than or equal to the total number of walkers")
+
     if  not (RP.N != 0 and ((RP.N & (RP.N - 1)) == 0)):
         raise Exception("Path node number, N, must be a power of 2.")
 
@@ -68,11 +71,13 @@ def loadKernel(system,RP):
                             "enableParallelizePath is True.")
 
         nbrOfThreadsPerWalker = RP.N / (2 ** RP.S)
-        nbrOfWorkgroups = RP.nbrOfWalkers/RP.nbrOfWalkersPerWorkGroup
-        
-        pimcKernel.localSize = (nbrOfThreadsPerWalker,RP.nbrOfWalkersPerWorkGroup)
-        pimcKernel.globalSize = (nbrOfWorkgroups* nbrOfThreadsPerWalker, RP.nbrOfWalkersPerWorkGroup)
-        pimcKernel.nbrOfThreads = RP.nbrOfWalkers* nbrOfThreadsPerWalker
+        nbrOfWorkgroups = RP.nbrOfWalkers / RP.nbrOfWalkersPerWorkGroup
+
+        pimcKernel.localSize = (nbrOfThreadsPerWalker,
+                                RP.nbrOfWalkersPerWorkGroup)
+        pimcKernel.globalSize = (nbrOfWorkgroups * nbrOfThreadsPerWalker,
+                                 RP.nbrOfWalkersPerWorkGroup)
+        pimcKernel.nbrOfThreads = RP.nbrOfWalkers * nbrOfThreadsPerWalker
     else:
         pimcKernel.localSize = None
         pimcKernel.globalSize = (RP.nbrOfWalkers,)
@@ -85,9 +90,9 @@ def loadKernel(system,RP):
 
     if RP.enableOperator:
         defines += "#define ENABLE_OPERATOR\n"
-        
+
     if RP.enableCorrelator:
-        defines += "#define ENABLE_CORRELATOR\n" 
+        defines += "#define ENABLE_CORRELATOR\n"
 
     if RP.enablePathShift:
         defines += "#define ENABLE_PATH_SHIFT\n"
@@ -119,7 +124,7 @@ def loadKernel(system,RP):
 
     defines += "#define DOF_ARGUMENT_DATA "
     for i in range(system.DOF):
-        defines += "pathPointPtr[" + str(i) + "*" + str(RP.N) + "]"
+        defines += "pathPointPtr[" + str(i) + " * " + str(RP.N) + "]"
         if (i != system.DOF - 1):
             defines += ","
     defines += "\n"
@@ -128,24 +133,26 @@ def loadKernel(system,RP):
         operatorCode = ""
         nbrOfOperatorsZeros = ""
         for i in range(0, len(RP.operators)):
-            operatorCode += "opAccum[" + str(i) + "]+=" + RP.operators[i] + ";\n"
+            operatorCode += ("opAccum[" + str(i) + "] += "
+                             + RP.operators[i] + ";\n")
             if i != 0:
                 nbrOfOperatorsZeros += ","
             nbrOfOperatorsZeros += "0.0f"
-            
+
     if RP.enableCorrelator:
         correlatorCode = ""
         nbrOfCorrelatorsOnes = ""
         for i in range(0, len(RP.correlators)):
-            correlatorCode += "corProd[" + str(i) + "]*=" + RP.correlators[i] + ";\n"
+            correlatorCode += ("corProd[" + str(i) + "] *= "
+                               + RP.correlators[i] + ";\n")
             if i != 0:
                 nbrOfCorrelatorsOnes += ","
             nbrOfCorrelatorsOnes += "1.0f"
- 
+
     class DictWithDefault(defaultdict):
         def __missing__(self, key):
             return key + str(" is not defined")
-     
+
     # Replacements that will be done in the kernel code file will be stored in
     # this dictionary.
     replacements = DictWithDefault()
@@ -160,13 +167,14 @@ def loadKernel(system,RP):
     replacements['userCode'] = system.userCode
     replacements['DOF'] = '%d' % system.DOF
     replacements['operatorRuns'] = '%d' % RP.operatorRuns
-    replacements['metroStepsPerOperatorRun'] = '%d' % RP.metroStepsPerOperatorRun
+    replacements['metroStepsPerOperatorRun'] = ('%d'
+            % RP.metroStepsPerOperatorRun)
 
     if RP.enableOperator:
         replacements['operatorCode'] = operatorCode
         replacements['nbrOfOperators'] = '%d' % len(RP.operators)
         replacements['nbrOfOperatorsZeros'] = nbrOfOperatorsZeros
-        replacements['opNorm'] = '%ef' % (1.0 / float(RP.operatorRuns * RP.N 
+        replacements['opNorm'] = '%ef' % (1.0 / float(RP.operatorRuns * RP.N
                                 * RP.nbrOfWalkers / pimcKernel.nbrOfThreads))
 
     if RP.enableCorrelator:
@@ -177,7 +185,7 @@ def loadKernel(system,RP):
     if RP.enableBisection:
         replacements['PI'] = '%ef' % 3.141592653589793
         replacements['2_POW_S'] = '%d' % 2 ** RP.S
-        replacements['S'] = '%d' % RP.S 
+        replacements['S'] = '%d' % RP.S
 
     if RP.enableSingleNodeMove:
         replacements['alpha'] = '%ef' % RP.alpha
@@ -187,32 +195,35 @@ def loadKernel(system,RP):
 
     if RP.enableBins:
         replacements['xmin'] = '%ef' % RP.xmin
-        replacements['xmax'] =  '%ef' % RP.xmax
-        replacements['binsPerPart'] =  '%d' % RP.binResolutionPerDOF
+        replacements['xmax'] = '%ef' % RP.xmax
+        replacements['binsPerPart'] = '%d' % RP.binResolutionPerDOF
         replacements['nbrOfBins'] = '%d' % RP.binResolutionPerDOF ** system.DOF
         replacements['invBinSize'] = '%ef' % (float(RP.binResolutionPerDOF) /
                                      float(RP.xmax - RP.xmin))
 
     #Import kernel code and paste 'replacements' into it
-    kernelCode_r = open(os.path.dirname(__file__) + '/GPUsrc/kernel.c', 'r').read()
+    kernelCode_r = open(os.path.dirname(__file__) +
+            '/GPUsrc/kernel.c', 'r').read()
     kernelCode = kernelCode_r % replacements
     """ String containing the kernel code that will be sent to the GPU. """
 
     printCleaned = False
     if printCleaned:
         import commands
-        preprocessedCode=commands.getstatusoutput('echo "'+kernelCode+'" | cpp')[1]
-        cleanedPreprocessedCode=""
+        preprocessedCode = commands.getstatusoutput('echo "' +
+                kernelCode + '" | cpp')[1]
+        cleanedPreprocessedCode = ""
         for i in preprocessedCode.splitlines():
-            if len(i)>0:
-                if i[0]!='#':
-                    cleanedPreprocessedCode+=i+'\n'
+            if len(i) > 0:
+                if i[0] != '#':
+                    cleanedPreprocessedCode += i + '\n'
         print cleanedPreprocessedCode
 
     #Create the OpenCL context and command queue
     pimcKernel.ctx = cl.create_some_context()
     queueProperties = cl.command_queue_properties.PROFILING_ENABLE
-    pimcKernel.queue = cl.CommandQueue(pimcKernel.ctx, properties=queueProperties)
+    pimcKernel.queue = cl.CommandQueue(pimcKernel.ctx,
+                                       properties=queueProperties)
 
     #Build the program and identify metropolis as the kernel
     pimcKernel.prg = (cl.Program(pimcKernel.ctx, kernelCode)
@@ -226,39 +237,42 @@ def loadKernel(system,RP):
                           (RP.nbrOfWalkers, RP.N * system.DOF),
                           np.float32)
 
-        #Buffer for storing number of accepted values and 
+        #Buffer for storing number of accepted values and
         #seeds for the xorshfitPRNG
-        pimcKernel.accepts = cl.array.zeros(pimcKernel.queue, (pimcKernel.nbrOfThreads, ),
-                                    np.uint32)
+        pimcKernel.accepts = cl.array.zeros(pimcKernel.queue,
+                (pimcKernel.nbrOfThreads, ), np.uint32)
 
         #np.random.seed(0)
         pimcKernel.seeds = cl.array.to_device(pimcKernel.queue,
-                         (np.random.randint(0, high=2 ** 31 - 1,
-                                            size = (pimcKernel.nbrOfThreads + 1,
-                                                    4))).astype(np.uint32))
+                         (np.random.randint(0, high = 2 ** 31 -
+                          size = (pimcKernel.nbrOfThreads + 1, 4))
+                          ).astype(np.uint32))
         if RP.enableOperator:
-            #pyopencl.array objects are created for storing the calculated operator
-            #means from each thread
-            pimcKernel.operatorValues = cl.array.zeros(pimcKernel.queue, pimcKernel.nbrOfThreads*
-                                                       len(RP.operators), np.float32)
+            #pyopencl.array objects are created for storing
+            #the calculated operator means from each thread
+            pimcKernel.operatorValues = cl.array.zeros(pimcKernel.queue,
+                    pimcKernel.nbrOfThreads * len(RP.operators), np.float32)
+
         if RP.enableCorrelator:
-            #pyopencl.array objects are created for storing the calculated operator
-            #means from each thread
-            pimcKernel.correlatorValues = cl.array.zeros(pimcKernel.queue, (RP.nbrOfWalkers,
-                                                       len(RP.correlators),RP.N/2), np.float32)
+            #pyopencl.array objects are created for storing
+            #the calculated operator means from each thread
+            pimcKernel.correlatorValues = cl.array.zeros(pimcKernel.queue,
+                    (RP.nbrOfWalkers, len(RP.correlators), RP.N / 2),
+                    np.float32)
 
         if RP.enableGlobalOldPath:
             pimcKernel.oldPath = cl.array.zeros(pimcKernel.queue,
-                                (pimcKernel.nbrOfThreads, (2**RP.S-1)* system.DOF),
-                                np.float32)
+                                (pimcKernel.nbrOfThreads,
+                                (2 ** RP.S - 1) * system.DOF), np.float32)
 
-        #A buffer for the multidimensional array for storing the resulting number
-        #of bin counts
+        #A buffer for the multidimensional array for storing
+        #the resulting number of bin counts
         if RP.enableBins:
             binTouple = (RP.binResolutionPerDOF,)
             for i in range(1, system.DOF):
                 binTouple += (RP.binResolutionPerDOF,)
-            pimcKernel.binCounts = cl.array.zeros(pimcKernel.queue, binTouple, np.uint32)
+            pimcKernel.binCounts = cl.array.zeros(pimcKernel.queue,
+                    binTouple, np.uint32)
 
     except pyopencl.MemoryError:
         raise Exception("Unable to allocate global "
@@ -268,33 +282,37 @@ def loadKernel(system,RP):
     pimcKernel.system = copy(system)
     pimcKernel.nbrOfOperators = len(RP.operators)
 
-    #Return the kernel object, context, command queue and pyopencl.array objects
+    #Return the kernel object, context, command queue and
+    #pyopencl.array objects
     return pimcKernel
 
-# is used for objects returned by runKernel
+
 class RunKernelResults:
     """
     RunKernelResults is a class where results from L{runKernel} are dumped.
 
     After a kernel run the following variables are available:
-    
+
     Always:
-      - B{runTime} (float) E{-} The time in seconds it took to execute 
+      - B{runTime} (float) E{-} The time in seconds it took to execute
         the kernel.
-      - B{acceptanceRate} (float)- E{-} Average of how often path changes where
-        accepted or rejected in the Metropolis step.
+      - B{acceptanceRate} (float)- E{-} Average of how often path
+        changes where accepted or rejected in the Metropolis step.
     If B{getOperator} in L{run_params.RunParams} is enabled:
       - B{operatorMean} (float) E{-} The average value of the operators
         calculated by the threads.
-      - B{operatorStandardError} (float) E{-} The standard error in 
-        the operatorMean.    
-    If B{binsEnabled} and B{returnBinCounts} in L{run_params.RunParams} are enabled:
-      - B{binCountNormed} (numpy array) E{-} Calculated probability density 
+      - B{operatorStandardError} (float) E{-} The standard error in
+        the operatorMean.
+    If B{binsEnabled} and B{returnBinCounts} in L{run_params.RunParams} are
+    enabled:
+      - B{binCountNormed} (numpy array) E{-} Calculated probability density
         in the interval specified in the run parameters.
     If B{returnPaths} in L{run_params} is enabled:
-      - B{paths} (numpy array) E{-} All the current active paths for the threads.
+      - B{paths} (numpy array) E{-} All the current active
+        paths for the threads.
     """
     pass
+
 
 def runKernel(pimcKernel):
     """
@@ -302,7 +320,7 @@ def runKernel(pimcKernel):
 
     This will start the kernel on the GPU. When the GPU is done desired
     data is fetched.
-    
+
     @type pimcKernel: L{pimc_kernel.PIMCKernel}
     @param pimcKernel: The class that is returned from L{loadKernel}.
     @rtype: L{RunKernelResults}
@@ -314,27 +332,26 @@ def runKernel(pimcKernel):
 
     #Run kernel. The buffers for all pyopencl.array objects are passed
     #by the .data parameter.
-    
-    
-    args=[pimcKernel.paths.data,
-          pimcKernel.accepts.data,
-          pimcKernel.seeds.data]
-          
+
+    args = [pimcKernel.paths.data,
+            pimcKernel.accepts.data,
+            pimcKernel.seeds.data]
+
     if runParams.enableGlobalOldPath:
-        args+=[pimcKernel.oldPath.data]
+        args += [pimcKernel.oldPath.data]
 
     if runParams.enableOperator:
-        args+=[pimcKernel.operatorValues.data]
+        args += [pimcKernel.operatorValues.data]
 
     if runParams.enableCorrelator:
-        args+=[pimcKernel.correlatorValues.data]
+        args += [pimcKernel.correlatorValues.data]
 
     if runParams.enableBins:
-        args+=[pimcKernel.binCounts.data]
-    
-    #print(pimcKernel.globalSize)#(nbrOfWorkgroups* nbrOfThreadsPerWalker, RP.nbrOfWalkersPerWorkGroup)   
+        args += [pimcKernel.binCounts.data]
+
+    #print(pimcKernel.globalSize)#(nbrOfWorkgroups* nbrOfThreadsPerWalker, RP.nbrOfWalkersPerWorkGroup)
     #print(pimcKernel.localSize)#(nbrOfThreadsPerWalker,RP.nbrOfWalkersPerWorkGroup)
-    #print(pimcKernel.getStats()) 
+    #print(pimcKernel.getStats())
 
     startTime = time()
     kernelObj = pimcKernel.kernel(pimcKernel.queue,
@@ -356,42 +373,54 @@ def runKernel(pimcKernel):
 
     #Fetch the operatorValues and acceptanceRate pyopencl.array objects from
     #the graphics card to the RAM.
-    RKR.acceptanceRate = (pimcKernel.accepts.get() / float(runParams.operatorRuns
+    RKR.acceptanceRate = (pimcKernel.accepts.get() /
+                          float(runParams.operatorRuns
                           * runParams.metroStepsPerOperatorRun)).mean()
+
     if runParams.returnOperator:
         if not runParams.enableOperator:
-            raise Exception("Can only return operator when runParams.enableOperator = True")
+            raise Exception("Can only return operator when "
+                            "runParams.enableOperator = True")
         else:
-            rawOpVector=pimcKernel.operatorValues.get()
-            RKR.operatorMean=np.empty((len(runParams.operators),runParams.nbrOfWalkers))
+            rawOpVector = pimcKernel.operatorValues.get()
+            RKR.operatorMean = np.empty((len(runParams.operators),
+                runParams.nbrOfWalkers))
+
             if runParams.enableParallelizePath:
                 nbrOfThreadsPerWalker = runParams.N / (2 ** runParams.S)
+
                 for j in range(len(runParams.operators)):
                     for i in range(runParams.nbrOfWalkers):
-                        RKR.operatorMean[j,i] = (rawOpVector[j+i*len(runParams.operators)*nbrOfThreadsPerWalker+
-                                                    np.array(range(nbrOfThreadsPerWalker))*len(runParams.operators)].mean())
+                        RKR.operatorMean[j, i] = (rawOpVector[j +
+                            i * len(runParams.operators) * nbrOfThreadsPerWalker+
+                           np.array(range(nbrOfThreadsPerWalker)) *
+                           len(runParams.operators)].mean())
             else:
                 for j in range(len(runParams.operators)):
                     for i in range(runParams.nbrOfWalkers):
-                        RKR.operatorMean[j,i] = rawOpVector[j+i*len(runParams.operators)].mean()
-                                     
+                        RKR.operatorMean[j, i] = rawOpVector[j + i *
+                                len(runParams.operators)].mean()
 
-                                     
     if runParams.returnCorrelator:
         if not runParams.enableCorrelator:
-            raise Exception("Can only return correlator when runParams.enableCorrelator = True")
+            raise Exception("Can only return correlator when "
+                            "runParams.enableCorrelator = True")
         correlatorValues = pimcKernel.correlatorValues.get()
-        RKR.correlatorMean=correlatorValues.mean(axis=0)/float(runParams.operatorRuns*runParams.N)
-        RKR.correlatorStandardError = (correlatorValues.std(axis=0) /
-                                     np.sqrt(pimcKernel.runParams.nbrOfWalkers))                              
+        RKR.correlatorMean = (correlatorValues.mean(axis = 0) /
+                       float(runParams.operatorRuns * runParams.N))
+        RKR.correlatorStandardError = (correlatorValues.std(axis = 0) /
+                        np.sqrt(pimcKernel.runParams.nbrOfWalkers))
 
     #Sum the bin counts from all individual threads.
     if runParams.returnBinCounts:
         if not runParams.enableBins:
-            raise Exception("Can only return bins when runParams.enableBins = True")
-        totBinCount = (runParams.nbrOfWalkers * runParams.operatorRuns * runParams.N)
-        binVol = (float(runParams.xmax - runParams.xmin)
-                 / float(runParams.binResolutionPerDOF)) ** pimcKernel.system.DOF
+            raise Exception("Can only return bins when "
+                            "runParams.enableBins = True")
+        totBinCount = (runParams.nbrOfWalkers * runParams.operatorRuns
+                * runParams.N)
+        binVol = ((float(runParams.xmax - runParams.xmin)
+                 / float(runParams.binResolutionPerDOF)) **
+                 pimcKernel.system.DOF)
         # Normalize probability density
         RKR.binCountNormed = (pimcKernel.binCounts.get().astype(np.float32)
                               / (binVol * totBinCount))
