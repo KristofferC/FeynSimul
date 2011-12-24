@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>src.physical_systems.pisa3</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="src-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            >PIMC</th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="src-module.html">Package&nbsp;src</a> ::
+        <a href="src.physical_systems-module.html">Package&nbsp;physical_systems</a> ::
+        Module&nbsp;pisa3
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="src.physical_systems.pisa3-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="src.physical_systems.pisa3-module.html">Module src.physical_systems.pisa3</a></h1>
+<pre class="py-src">
+<a name="Pisa3"></a><div id="Pisa3-def"><a name="L1"></a><tt class="py-lineno"> 1</tt> <a class="py-toggle" href="#" id="Pisa3-toggle" onclick="return toggle('Pisa3');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="src.physical_systems.pisa3.Pisa3-class.html">Pisa3</a><tt class="py-op">:</tt> </tt>
+</div><div id="Pisa3-collapsed" style="display:none;" pad="++" indent="++++"></div><div id="Pisa3-expanded"><a name="L2"></a><tt class="py-lineno"> 2</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L3"></a><tt class="py-lineno"> 3</tt>  <tt class="py-line"><tt class="py-docstring">    A system containing three particles interacting in 3D with </tt> </tt>
+<a name="L4"></a><tt class="py-lineno"> 4</tt>  <tt class="py-line"><tt class="py-docstring">    gaussian potentials.</tt> </tt>
+<a name="L5"></a><tt class="py-lineno"> 5</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L6"></a><tt class="py-lineno"> 6</tt>  <tt class="py-line"><tt class="py-docstring">    The system is written in Jacobi coordinates so only six degrees</tt> </tt>
+<a name="L7"></a><tt class="py-lineno"> 7</tt>  <tt class="py-line"><tt class="py-docstring">    of freedom. The potential is taken from arXiv:1106.3853v1 </tt> </tt>
+<a name="L8"></a><tt class="py-lineno"> 8</tt>  <tt class="py-line"><tt class="py-docstring">    [physics.atm-clus] and can be found at U{http://arxiv.org/abs/1106.3853}.</tt> </tt>
+<a name="L9"></a><tt class="py-lineno"> 9</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt>  </tt>
+<a name="L10"></a><tt class="py-lineno">10</tt>  <tt class="py-line"> </tt>
+<a name="Pisa3.__init__"></a><div id="Pisa3.__init__-def"><a name="L11"></a><tt class="py-lineno">11</tt> <a class="py-toggle" href="#" id="Pisa3.__init__-toggle" onclick="return toggle('Pisa3.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="src.physical_systems.pisa3.Pisa3-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">threeBodyPot</tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Pisa3.__init__-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="Pisa3.__init__-expanded"><a name="L12"></a><tt class="py-lineno">12</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L13"></a><tt class="py-lineno">13</tt>  <tt class="py-line"><tt class="py-docstring">        Initiates the system.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno">14</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L15"></a><tt class="py-lineno">15</tt>  <tt class="py-line"><tt class="py-docstring">        @type threeBodyPot: boolean</tt> </tt>
+<a name="L16"></a><tt class="py-lineno">16</tt>  <tt class="py-line"><tt class="py-docstring">        @param threeBodyPot: Determines if a three body potential </tt> </tt>
+<a name="L17"></a><tt class="py-lineno">17</tt>  <tt class="py-line"><tt class="py-docstring">        should be included</tt> </tt>
+<a name="L18"></a><tt class="py-lineno">18</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L19"></a><tt class="py-lineno">19</tt>  <tt class="py-line"> </tt>
+<a name="L20"></a><tt class="py-lineno">20</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">userCode</tt> <tt class="py-op">=</tt> <tt class="py-string">"""inline float sqr(float x){return x*x;}</tt> </tt>
+<a name="L21"></a><tt class="py-lineno">21</tt>  <tt class="py-line"><tt class="py-string">                           inline float quad(float x){return x*x*x*x;}</tt> </tt>
+<a name="L22"></a><tt class="py-lineno">22</tt>  <tt class="py-line"><tt class="py-string">                           #define SQRT3 1.732050807568877293               </tt> </tt>
+<a name="L23"></a><tt class="py-lineno">23</tt>  <tt class="py-line"><tt class="py-string">                           #define INVSQRT2 0.707106781187</tt> </tt>
+<a name="L24"></a><tt class="py-lineno">24</tt>  <tt class="py-line"><tt class="py-string">                           #define INVSQRT3 0.577350269190</tt> </tt>
+<a name="L25"></a><tt class="py-lineno">25</tt>  <tt class="py-line"><tt class="py-string">                           #define INVSQRT4 0.5</tt> </tt>
+<a name="L26"></a><tt class="py-lineno">26</tt>  <tt class="py-line"><tt class="py-string">                           #define INVSQRT6 0.408248290464</tt> </tt>
+<a name="L27"></a><tt class="py-lineno">27</tt>  <tt class="py-line"><tt class="py-string">                         """</tt> </tt>
+<a name="L28"></a><tt class="py-lineno">28</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">DOF</tt> <tt class="py-op">=</tt> <tt class="py-number">6</tt> </tt>
+<a name="L29"></a><tt class="py-lineno">29</tt>  <tt class="py-line">         </tt>
+<a name="L30"></a><tt class="py-lineno">30</tt>  <tt class="py-line"><tt class="py-comment">######### ONLY TWO BODY POTENTIAL ##########</tt> </tt>
+<a name="L31"></a><tt class="py-lineno">31</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-keyword">not</tt> <tt class="py-name">threeBodyPot</tt><tt class="py-op">:</tt> </tt>
+<a name="L32"></a><tt class="py-lineno">32</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">potential</tt> <tt class="py-op">=</tt> <tt class="py-string">"""-1.227*native_exp(-0.8604556620299615*(sqr(x1) + sqr(x2) + sqr(x3))) - 1.227*native_exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6)) - 1.227*native_exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))"""</tt>  </tt>
+<a name="L33"></a><tt class="py-lineno">33</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">energyOp</tt> <tt class="py-op">=</tt> <tt class="py-string">"""0.00007092173220669096*(2.0f*native_exp(-0.8604462943692912*(sqr(x1) + sqr(x2) + sqr(x3)))*(-8649.0f + 7442.0f*sqr(x1) + 7442.0f*sqr(x2) + 7442.0f*sqr(x3)) + native_exp(-0.2151115735923228*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*(sqr(x4) + sqr(x5)) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*(-17298.0f + 3721.0f*sqr(x1) + 3721.0f*sqr(x2) + 3721.0f*sqr(x3) + 11163.0f*sqr(x4) + 11163.0f*sqr(x5) + 11163.0f*sqr(x6) - 7442.0f*SQRT3*x1*x4 - 7442.0f*SQRT3*x2*x5 - 7442.0f*SQRT3*x3*x6) + native_exp(-0.2151115735923228*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*(sqr(x4) + sqr(x5)) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*(-17298.0f + 3721.0f*sqr(x1) + 3721.0f*sqr(x2) + 3721.0f*sqr(x3) + 11163.0f*sqr(x4) + 11163.0f*sqr(x5) + 11163.0f*sqr(x6) + 7442.0f*SQRT3*x1*x4 + 7442.0f*SQRT3*x2*x5 + 7442.0f*SQRT3*x3*x6))"""</tt> </tt>
+<a name="L34"></a><tt class="py-lineno">34</tt>  <tt class="py-line"> </tt>
+<a name="L35"></a><tt class="py-lineno">35</tt>  <tt class="py-line"> </tt>
+<a name="L36"></a><tt class="py-lineno">36</tt>  <tt class="py-line"><tt class="py-comment">##### THREE BODY POTENTIAL #####</tt> </tt>
+<a name="L37"></a><tt class="py-lineno">37</tt>  <tt class="py-line"> </tt>
+<a name="L38"></a><tt class="py-lineno">38</tt>  <tt class="py-line">         </tt>
+<a name="L39"></a><tt class="py-lineno">39</tt>  <tt class="py-line"><tt class="py-comment">#W0 = 1.4742 rho0 = 1 </tt> </tt>
+<a name="L40"></a><tt class="py-lineno">40</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">threeBodyPot</tt><tt class="py-op">:</tt> </tt>
+<a name="L41"></a><tt class="py-lineno">41</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">potential</tt> <tt class="py-op">=</tt> <tt class="py-string">"""-1.227*exp(-0.8604556620299615*(sqr(x1) + sqr(x2) + sqr(x3))) + 1.4742*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6))) - 1.227*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6)) - 1.227*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))"""</tt> </tt>
+<a name="L42"></a><tt class="py-lineno">42</tt>  <tt class="py-line"> </tt>
+<a name="L43"></a><tt class="py-lineno">43</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">energyOp</tt> <tt class="py-op">=</tt> <tt class="py-string">"""1.227*exp(-0.8604556620299615*(sqr(x1) + sqr(x2) + sqr(x3))) + 1.4742*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6))) - 1.227*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6)) - 1.227*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6)) + 2.6193718028314008e-23*(4.030657641536502e22*exp(-0.8604556620299615*(sqr(x1) + sqr(x2) + sqr(x3)))*sqr(x1) - 4.871801911049412e22*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)))*sqr(x1) + 1.0076644103841254e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*sqr(x1) + 1.0076644103841254e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*sqr(x1) + 4.030657641536502e22*exp(-0.8604556620299615*(sqr(x1) + sqr(x2) + sqr(x3)))*sqr(x2) - 4.871801911049412e22*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)))*sqr(x2) + 1.0076644103841254e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*sqr(x2) + 1.0076644103841254e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*sqr(x2) + 4.030657641536502e22*exp(-0.8604556620299615*(sqr(x1) + sqr(x2) + sqr(x3)))*sqr(x3) - 4.871801911049412e22*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)))*sqr(x3) + 1.0076644103841254e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*sqr(x3) + 1.0076644103841254e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*sqr(x3) - 4.871801911049412e22*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)))*sqr(x4) + 3.022993231152376e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*sqr(x4) + 3.022993231152376e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*sqr(x4) - 4.871801911049412e22*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)))*sqr(x5) + 3.022993231152376e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*sqr(x5) + 3.022993231152376e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*sqr(x5) - 4.871801911049412e22*exp(-0.8656261399255841*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)))*sqr(x6) + 3.022993231152376e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*sqr(x6) + 3.022993231152376e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*sqr(x6) - 2.015328820768251e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*SQRT3*x1*x4 + 2.015328820768251e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*SQRT3*x1*x4 - 2.015328820768251e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*SQRT3*x2*x5 + 2.015328820768251e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*SQRT3*x2*x5 - 2.015328820768251e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) - 2.0f*SQRT3*x1*x4 - 2.0f*SQRT3*x2*x5 - 2.0f*SQRT3*x3*x6))*SQRT3*x3*x6 + 2.015328820768251e22*exp(-0.21511391550749037*(sqr(x1) + sqr(x2) + sqr(x3) + 3.0f*sqr(x4) + 3.0f*sqr(x5) + 3.0f*sqr(x6) + 2.0f*SQRT3*x1*x4 + 2.0f*SQRT3*x2*x5 + 2.0f*SQRT3*x3*x6))*SQRT3*x3*x6)"""</tt> </tt>
+</div></div><a name="L44"></a><tt class="py-lineno">44</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="src-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            >PIMC</th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Tue Aug  2 13:26:30 2011
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
