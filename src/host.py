@@ -244,7 +244,7 @@ def loadKernel(system, RP):
 
         #np.random.seed(0)
         pimcKernel.seeds = cl.array.to_device(pimcKernel.queue,
-                         (np.random.randint(0, high = 2 ** 31 -
+                         (np.random.randint(0, high = 2 ** 31 - 1,
                           size = (pimcKernel.nbrOfThreads + 1, 4))
                           ).astype(np.uint32))
         if RP.enableOperator:
