@@ -27,7 +27,7 @@
 	#ifdef ENABLE_PARALELLIZE_PATH
 		#define PATH_TYPE_KEYWORD __local
 	#else
-		#define PATH_TYPE_KEYWORD  
+		#define PATH_TYPE_KEYWORD
 	#endif
 #endif
 
@@ -99,7 +99,7 @@ randFloat(uint4 *seedPtr)
 //##############################################################################
 //#                                kinEnergyEst                                #
 //##############################################################################
-//Description: This returns potential energy between the points 
+//Description: This returns potential energy between the points
 inline float kinEnergyEst (float leftX, float rightX)
 {
     float delta = leftX - rightX;
@@ -107,18 +107,18 @@ inline float kinEnergyEst (float leftX, float rightX)
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  doBisectMove
  *  Description:  Moves the beads in a path according the the bisection method
  *                for level n. Checks if new path should be accepted. Revert
  *                path if path rejected.
  *
- *  Arguments:    *x - path with degree offset 
+ *  Arguments:    *x - path with degree offset
  *                startPoint - index of path times slice is started.
  *                s - 2**x is the length of the slice.
  *                n - bisection level.
- *                
+ *
  *  Return:       void
  * =====================================================================================
  */
@@ -175,7 +175,7 @@ __global float *oldPath,
 
 
             // Move with normal dist with width sigmaN[n] = sqrt(epsilon * s**2 /
-            // n**2)  
+            // n**2)
             // First node to move will be located at 2**(s-n).
             // Distance between points are twice of that.
             // This gives:
@@ -216,7 +216,7 @@ __global float *oldPath,
                 else
                 {
                     rz =
-                        sigmaN[n] * native_sqrt (-2.0f * log (v)) 
+                        sigmaN[n] * native_sqrt (-2.0f * log (v))
                         * native_sin (2.0f * %(PI)s * u);
                 }
 
@@ -228,7 +228,7 @@ __global float *oldPath,
             }
         }
     }
-	
+
     // Calculate action for the new path
     float actionNew = 0.0f;
     for (int i = 1; i < %(2_POW_S)s; i++)
@@ -414,7 +414,7 @@ metropolis (__global float *paths
     seedG.z = seeds[lastSeedPos + 2];
     seedG.w = seeds[lastSeedPos + 3];
     uint local_accepts=0;
-    
+
 #ifdef ENABLE_PATH_SHIFT
     uint mask = %(N)s - 1;
 #endif
@@ -454,7 +454,7 @@ metropolis (__global float *paths
             sqrt (((float) Ns * %(epsilon)s / (2.0f * (float) twoPow[i])));
     }
 #endif
-    
+
 #ifdef ENABLE_OPERATOR
     float opAccum[%(nbrOfOperators)s]={%(nbrOfOperatorsZeros)s};
 #endif
@@ -470,7 +470,7 @@ metropolis (__global float *paths
 #else
 			barrier(CLK_LOCAL_MEM_FENCE);
 #endif
-#endif	
+#endif
         for(uint j =0;j<%(metroStepsPerOperatorRun)s;j++)
 		{
 #ifdef ENABLE_PATH_SHIFT
@@ -483,7 +483,7 @@ metropolis (__global float *paths
 	        float offset =
 	            %(PSAlpha)s * (2.0f * randFloat (&seed) - 1.0f);
 
-	        // Revert path shift if rejected by Metropolis step 
+	        // Revert path shift if rejected by Metropolis step
 	        if (exp (-%(epsilon)s *  shiftPathEnergyDiff (local_path + (%(N)s * degree),
 	                        degree, offset, left, right)) < randFloat (&seed))
 	        {
@@ -494,7 +494,7 @@ metropolis (__global float *paths
 	        {
 	            local_accepts++;
 	        }
-#endif            
+#endif
 
 #ifdef ENABLE_SINGLE_NODE_MOVE
         	uint modPoint = (i*%(metroStepsPerOperatorRun)s+j)%% %(N)s;
@@ -521,7 +521,7 @@ metropolis (__global float *paths
                 - kinEnergyEst(local_path[modPathPoint], local_path[leftIndex])
                 - kinEnergyEst(local_path[modPathPoint],
                         local_path[rightIndex]);
-			
+
 			PATH_TYPE_KEYWORD float *pathPointPtr=local_path + modPoint;
 			diffE -= potential(DOF_ARGUMENT_DATA);
 			local_path[modPathPoint] = modX;
@@ -545,7 +545,7 @@ metropolis (__global float *paths
 #ifdef ENABLE_PARALELLIZE_PATH
              ((seedG.w & ((uint)(%(2_POW_S)s - 1))) + %(2_POW_S)s*get_local_id(0))%% %(N)s,
 #else
-             (seedG.w & ((uint)(%(N)s - 1)))%% %(N)s, 
+             (seedG.w & ((uint)(%(N)s - 1)))%% %(N)s,
 #endif
              &seed,&local_accepts, twoPow, sigmaN);
 #endif
@@ -556,7 +556,7 @@ metropolis (__global float *paths
 #else
 			barrier(CLK_LOCAL_MEM_FENCE);
 #endif
-#endif		
+#endif
 		}//end of metroStepsPerOperatorRun loop
 
 
@@ -593,9 +593,9 @@ metropolis (__global float *paths
     			float corProd[%(nbrOfCorrelators)s]={%(nbrOfCorrelatorsOnes)s};
 				PATH_TYPE_KEYWORD float *pathPointPtr=local_path+timeSlice;
 				correlator(DOF_ARGUMENT_DATA,corProd);
-				
+
 				pathPointPtr=local_path+timeSlice2;
-				
+
 				correlator(DOF_ARGUMENT_DATA,corProd);
 				for(uint corI=0;corI<%(nbrOfCorrelators)s;corI++)
 				{
@@ -607,7 +607,7 @@ metropolis (__global float *paths
 				}
 #ifdef ENABLE_PARALELLIZE_PATH
 				barrier(CLK_GLOBAL_MEM_FENCE);
-#endif	
+#endif
          	}
 #endif
 		}
