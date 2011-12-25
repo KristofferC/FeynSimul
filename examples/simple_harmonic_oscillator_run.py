@@ -25,40 +25,43 @@ HO_runparams.nbrOfWalkers = 448*2
 HO_runparams.N = 256
 HO_runparams.S = 6
 HO_runparams.beta = 11
-HO_runparams.operatorRuns = 20
-HO_runparams.metroStepsPerOperatorRun = 20
+HO_runparams.operatorRuns = 100
+HO_runparams.returnOperator = True
+HO_runparams.metroStepsPerOperatorRun = 40
 HO_runparams.enableBisection = True
 HO_runparams.enableParallelizePath = True
 HO_runparams.binsEnabled = True
 HO_runparams.returnBinCounts = True
 HO_runparams.xmin = -4.0
 HO_runparams.xmax = 4.0
+HO_runparams.enableBins = True
 HO_runparams.binResolutionPerDOF = 60
-
+HO_runparams.nbrOfWalkersPerWorkGroup = 4
+plotWaveFunction = False
 
 # Set the operator
-operators = (HO_syst.energyOp,)
+HO_runparams.operators  = (HO_syst.energyOp,)
 
 # Load kernel
-HO_kernelEnvironment = loadKernel(HO_syst, HO_runparams, operators)
+HO_kernelEnvironment = loadKernel(HO_syst, HO_runparams)
 
 # Run kernel
 HO_kernelResults = runKernel(HO_kernelEnvironment)
 
 # Print the results
-print "Mean: " + str(HO_kernelResults.operatorMean[0])
-print "Standard error: " + str(HO_kernelResults.operatorStandardError)
-print "Acceptance rate: " + str(HO_kernelResults.acceptanceRate)
-print "Time for GPU to finish calculations: " + str(HO_kernelResults.runTime)
+print "Mean: " + str(np.mean(HO_kernelResults.operatorMean))
+#print "Standard error: " + str(HO_kernelResults.operatorStandardError)
+#print "Acceptance rate: " + str(HO_kernelResults.acceptanceRate)
+#print "Time for GPU to finish calculations: " + str(HO_kernelResults.runTime)
 
 #Plot resulting wavefunction
 
-#if plotWaveFunction and RP.binsEnabled:
+if plotWaveFunction and RP.binsEnabled:
   
 # x interval for plot, + 0.5 * binSize to have each value in the middle of bins
-binSize = (HO_runparams.xmax - HO_runparams.xmin) / HO_runparams.binResolutionPerDOF
-x = np.linspace(HO_runparams.xmin, HO_runparams.xmax - binSize,
+    binSize = (HO_runparams.xmax - HO_runparams.xmin) / HO_runparams.binResolutionPerDOF
+    x = np.linspace(HO_runparams.xmin, HO_runparams.xmax - binSize,
                 HO_runparams.binResolutionPerDOF) + 0.5 * binSize
-pl.plot(x, HO_kernelResults.binCountNormed,'*')
-pl.show()
+    pl.plot(x, HO_kernelResults.binCountNormed,'*')
+    pl.show()
 
