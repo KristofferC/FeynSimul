@@ -8,8 +8,8 @@
 //             performed and some helper methods for generating random numbers
 //             numbers with the Xorshift PRNG.
 //______________________________________________________________________________
-//Authors:     Feynman Bachelors Group, Chalmers University of Technology
-//Date:        2011-05-17
+//Authors:     Kristoffer Carlsson, Patric Holmvall, Petter Saterskog
+//Date:        2011-12-25
 //Licensing:   GPL
 //##############################################################################
 
@@ -18,8 +18,9 @@
 //##############################################################################
 //#                                 Defines                                    #
 //##############################################################################
-//Description: This is a placeholder for defines used in the program
+//Description: This is a placeholder for defines used in the program.
 %(defines)s
+
 
 #ifdef ENABLE_GLOBAL_PATH
 	#define PATH_TYPE_KEYWORD __global
@@ -31,12 +32,15 @@
 	#endif
 #endif
 
+
 //##############################################################################
 //#                                 userCode                                   #
 //##############################################################################
 //Description: This is a placeholder for code that the user can write to help
 //             specify operator and potential.
 %(userCode)s
+
+
 //##############################################################################
 //#                                 OPERATOR                                   #
 //##############################################################################
@@ -48,6 +52,8 @@ inline void operator (DOF_ARGUMENT_DECL,float opAccum[%(nbrOfOperators)s])
     %(operatorCode)s
 }
 #endif
+
+
 //##############################################################################
 //#                                 CORRELATOR                                 #
 //##############################################################################
@@ -59,6 +65,8 @@ inline void correlator (DOF_ARGUMENT_DECL,float corProd[%(nbrOfCorrelators)s])
     %(correlatorCode)s
 }
 #endif
+
+
 //##############################################################################
 //#                                 POTENTIAL                                  #
 //##############################################################################
@@ -99,52 +107,41 @@ randFloat(uint4 *seedPtr)
 //##############################################################################
 //#                                kinEnergyEst                                #
 //##############################################################################
-//Description: This returns potential energy between the points
+//Description: This returns potential energy between the points.
 inline float kinEnergyEst (float leftX, float rightX)
 {
     float delta = leftX - rightX;
     return 0.5f * (delta * delta) * %(epsilon_inv2)s;
 }
 
-
-/*
- * ===  FUNCTION  ======================================================================
- *         Name:  doBisectMove
- *  Description:  Moves the beads in a path according the the bisection method
- *                for level n. Checks if new path should be accepted. Revert
- *                path if path rejected.
- *
- *  Arguments:    *x - path with degree offset
- *                startPoint - index of path times slice is started.
- *                s - 2**x is the length of the slice.
- *                n - bisection level.
- *
- *  Return:       void
- * =====================================================================================
- */
-
+//##############################################################################
+//#                                doBisectMove                                #
+//##############################################################################
+//Description: Does the bisection sampling algorithm for all DOF:s
+//             and accepts/rejects the new path according to the
+//             Metropolis algorithm.
 #ifdef ENABLE_BISECTION
 
-    inline void
-doBisectMove (PATH_TYPE_KEYWORD float *path,
+inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
 #ifdef ENABLE_GLOBAL_OLD_PATH
-__global float *oldPath,
+                          __global float *oldPath,
 #endif
- uint startPoint,
-        uint4 *seedPtr, uint *local_accepts, int *twoPow,
-        float *sigmaN)
+                         uint startPoint, uint4 *seedPtr,
+                         uint *local_accepts, int *twoPow,
+                         float *sigmaN)
 {
 #ifndef ENABLE_GLOBAL_OLD_PATH
+    // If path to be changed is store in local memory allocate
+    // memory for it.
     float oldPath[(%(2_POW_S)s -1) * %(DOF)s];
 #endif
 
     // Save path that will later be changed. Also calculate action for the old
     // path.
     float actionOld = 0.0f;
-
     for (int i = 1; i < %(2_POW_S)s; i++)
     {
-        for (int degree = 0; degree < %(DOF)s ; degree++)
+        for (int degree = 0; degree < %(DOF)s; degree++)
         {
             int Ndegree = degree * %(N)s;
             int p = i + Ndegree + startPoint;
@@ -163,17 +160,14 @@ __global float *oldPath,
         }
         PATH_TYPE_KEYWORD float *pathPointPtr = path + iCurr;
         actionOld += %(epsilon)s *potential(DOF_ARGUMENT_DATA);
-
-
     }
+
     // Loop over levels. Total of s levels. Starts from 1 to and including s.
     for (int n = 1; n <= %(S)s; n++)
     {
         // Loop over nodes for level n. Total of 2**(n-1) nodes to loop over.
         for (int i = 0; i < twoPow[n - 1]; i++)
         {
-
-
             // Move with normal dist with width sigmaN[n] = sqrt(epsilon * s**2 /
             // n**2)
             // First node to move will be located at 2**(s-n).
@@ -185,8 +179,7 @@ __global float *oldPath,
             // The points to be averaged are pointMoved +- 2**(s-n) = i *
             // 2**(s-n+1) and (i+1) * 2**(s-n+1)
             uint pointLeft = i * twoPow[%(S)s - n + 1] + startPoint;
-            uint pointRight =
-                (i + 1) * twoPow[%(S)s - n + 1] + startPoint;
+            uint pointRight = (i + 1) * twoPow[%(S)s - n + 1] + startPoint;
 
             // Periodic boundary conditions. None of the point values should be larger
             // than 2N.
@@ -209,22 +202,21 @@ __global float *oldPath,
                 float u = randFloat(seedPtr);
                 float v = randFloat(seedPtr);
                 float rz;
+                // Corner case if randFloat gives a zero.
                 if (v == 0.0f)
                 {
                     rz = 0.0f;
                 }
                 else
                 {
-                    rz =
-                        sigmaN[n] * native_sqrt (-2.0f * log (v))
+                    rz = sigmaN[n] * native_sqrt (-2.0f * log (v))
                         * native_sin (2.0f * %(PI)s * u);
                 }
 
                 // Do the actual moving of node by averaging nodes to right and left
                 // and use a normally distributed offset z.
                 path[pointMoved + Ndegree] = 0.5f * (path[pointLeft + Ndegree] +
-                        path[pointRight +
-                        Ndegree]) + rz;
+                                                     path[pointRight + Ndegree]) + rz;
             }
         }
     }
@@ -242,12 +234,12 @@ __global float *oldPath,
         actionNew += %(epsilon)s *potential(DOF_ARGUMENT_DATA);
     }
     // Path rejected:
-    if ( exp(actionOld-actionNew) < randFloat(seedPtr))
+    if (exp(actionOld-actionNew) < randFloat(seedPtr))
     {
         // Revert to old path
         for (int i = 1; i < %(2_POW_S)s; i++)
         {
-            for (int degree = 0; degree < %(DOF)s ; degree++)
+            for (int degree = 0; degree < %(DOF)s; degree++)
             {
                 int Ndegree = degree * %(N)s;
                 int p = i + Ndegree + startPoint;
@@ -258,10 +250,11 @@ __global float *oldPath,
                 path[p] = oldPath[(i - 1) * %(DOF)s + degree];
             }
         }
-	}
-	else
-	{
-		(*local_accepts)++;
+    }
+    else
+    {
+        // Patch accepted, add one to accept counter.
+        (*local_accepts)++;
     }
 }
 #endif
@@ -271,6 +264,7 @@ __global float *oldPath,
 //##############################################################################
 //Description: Shifts all beads in an interval of a path by an offset and
 //returns the difference in energy between the shifted and original path.
+// TODO: This should really do the action checking itself and revert if needed.
 #ifdef ENABLE_PATH_SHIFT
     inline float
 shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
@@ -303,7 +297,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
         kinDiff -= kinEnergyEst (x[right], x[rightright]);
         for (int i = left; i <= right; i++)
         {
-			PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
+	    PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
             potDiff -= potential (DOF_ARGUMENT_DATA);
             x[i] = x[i] + offset;
             potDiff += potential (DOF_ARGUMENT_DATA);
@@ -318,7 +312,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
         kinDiff -= kinEnergyEst (x[right], x[right + 1]);
         for (int i = left; i < %(N)s; i++)
         {
-        	PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
+            PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
             potDiff -= potential (DOF_ARGUMENT_DATA);
             x[i] += offset;
             potDiff += potential (DOF_ARGUMENT_DATA);
@@ -326,7 +320,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
 
         for (int i = 0; i <= right; i++)
         {
-        	PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
+            PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
             potDiff -= potential (DOF_ARGUMENT_DATA);
             x[i] += offset;
             potDiff += potential (DOF_ARGUMENT_DATA);
@@ -341,7 +335,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
 
 
 //##############################################################################
-//#                                 histogram                                  #
+//#                                 Histogram                                  #
 //##############################################################################
 //Description: Function used to make a histogram representing the wavefunction
 #ifdef ENABLE_BINS
@@ -382,37 +376,39 @@ histogram (PATH_TYPE_KEYWORD float *local_path, __global uint *binCounts)
 //             called from Python and takes all the input and delivers output.
 __kernel void
 metropolis (__global float *paths
-		   ,__global uint *accepts
-		   ,__global uint *seeds
+            ,__global uint *accepts
+            ,__global uint *seeds
 #ifdef ENABLE_GLOBAL_OLD_PATH
-		   ,__global float *oldPaths
+            ,__global float *oldPaths
 #endif
 #ifdef ENABLE_OPERATOR
            ,__global float *opMeans
 #endif
 #ifdef ENABLE_CORRELATOR
-           ,__global float *corMeans
+            ,__global float *corMeans
 #endif
 #ifdef ENABLE_BINS
-		   ,__global uint *binCounts
+	    ,__global uint *binCounts
 #endif
         )
 {
 #ifdef ENABLE_PARALELLIZE_PATH
-	uint walkerId=get_group_id(0)*%(nbrOfWalkersPerWorkGroup)s+get_local_id(1);
+    uint walkerId = get_group_id(0) * %(nbrOfWalkersPerWorkGroup)s + get_local_id(1);
 #endif
-	uint threadId=get_global_id(0)+get_global_id (1)*get_global_size(0);
+    uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
     //This sets the seeds for the Xorshift PRNG.
     uint4 seed,seedG;
     seed.x = seeds[threadId * 4 + 0];
     seed.y = seeds[threadId * 4 + 1];
     seed.z = seeds[threadId * 4 + 2];
     seed.w = seeds[threadId * 4 + 3];
-    uint lastSeedPos=get_global_size(0)*get_global_size(1)*4;
+
+    uint lastSeedPos = get_global_size(0) * get_global_size(1)*4;
     seedG.x = seeds[lastSeedPos + 0];
     seedG.y = seeds[lastSeedPos + 1];
     seedG.z = seeds[lastSeedPos + 2];
     seedG.w = seeds[lastSeedPos + 3];
+
     uint local_accepts=0;
 
 #ifdef ENABLE_PATH_SHIFT
@@ -429,10 +425,12 @@ metropolis (__global float *paths
     //This imports the path corresponding to this thread from the collection
     //of all paths stored in the field paths.
 #ifdef ENABLE_PARALELLIZE_PATH
-	PATH_TYPE_KEYWORD float workGroupPath[%(pathSize)s*%(nbrOfWalkersPerWorkGroup)s];
-	PATH_TYPE_KEYWORD float *local_path=workGroupPath+get_local_id(1)*%(pathSize)s;
+    PATH_TYPE_KEYWORD float workGroupPath[%(pathSize)s * %(nbrOfWalkersPerWorkGroup)s];
+    PATH_TYPE_KEYWORD float *local_path = workGroupPath + get_local_id(1) * %(pathSize)s;
+
     for (uint i = 0; i < %(2_POW_S)s * %(DOF)s; i++)
-        local_path[i+ get_local_id(0)*%(2_POW_S)s* %(DOF)s] = paths[walkerId * %(pathSize)s + i + get_local_id(0)*%(2_POW_S)s* %(DOF)s];
+        local_path[i + get_local_id(0) * %(2_POW_S)s * %(DOF)s] = paths[walkerId *
+            %(pathSize)s + i + get_local_id(0) * %(2_POW_S)s * %(DOF)s];
 #else
 	PATH_TYPE_KEYWORD float local_path[%(pathSize)s];
     for (uint i = 0; i < %(pathSize)s; i++)
@@ -441,64 +439,67 @@ metropolis (__global float *paths
 #endif
 
 #ifdef ENABLE_BISECTION
+    // Create the stdev array for bisection algorithm and
+    // an array with powers of two.
     int twoPow[%(S)s + 1];
     float sigmaN[%(S)s + 1];
     int Ns = %(2_POW_S)s;
     twoPow[0] = 1;
-    sigmaN[0] = ((float) Ns) * %(epsilon)s;
 
+    sigmaN[0] = ((float) Ns) * %(epsilon)s;
     for (int i = 1; i <= %(S)s; i++)
     {
         twoPow[i] = twoPow[i - 1] * 2;
-        sigmaN[i] =
-            sqrt (((float) Ns * %(epsilon)s / (2.0f * (float) twoPow[i])));
+        sigmaN[i] = sqrt (((float) Ns * %(epsilon)s / (2.0f * (float) twoPow[i])));
     }
 #endif
 
 #ifdef ENABLE_OPERATOR
     float opAccum[%(nbrOfOperators)s]={%(nbrOfOperatorsZeros)s};
 #endif
-    /*
-       The following loops are responsible for creating Metropolis samples and measuring the operator.
-     */
+
+    // The following loops are responsible for creating Metropolis
+    // samples and measuring the operator.
+
     for (uint i = 0; i < %(operatorRuns)s; i++)
-	{
+    {
 
 #ifdef ENABLE_PARALELLIZE_PATH
 #ifdef ENABLE_GLOBAL_PATH
-			barrier(CLK_GLOBAL_MEM_FENCE);
+        barrier(CLK_GLOBAL_MEM_FENCE);
 #else
-			barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_LOCAL_MEM_FENCE);
 #endif
 #endif
-        for(uint j =0;j<%(metroStepsPerOperatorRun)s;j++)
-		{
+        for(uint j = 0; j < %(metroStepsPerOperatorRun)s; j++)
+        {
 #ifdef ENABLE_PATH_SHIFT
-			uint degree=(%(metroStepsPerOperatorRun)s*i+j) %% %(DOF)s;
-	        // Choose the interval of the path to shift
-	        xorshift (&seedG);
-	        uint left =seedG.w & mask;
-	        xorshift (&seedG);
-	        uint right = seedG.w & mask;
-	        float offset =
-	            %(PSAlpha)s * (2.0f * randFloat (&seed) - 1.0f);
+            uint degree = (%(metroStepsPerOperatorRun)s*i+j) %% %(DOF)s;
+            // Choose the interval of the path to shift
+            xorshift (&seedG);
+            uint left =seedG.w & mask;
+            xorshift (&seedG);
+            uint right = seedG.w & mask;
+            float offset =
+                %(PSAlpha)s * (2.0f * randFloat (&seed) - 1.0f);
 
-	        // Revert path shift if rejected by Metropolis step
-	        if (exp (-%(epsilon)s *  shiftPathEnergyDiff (local_path + (%(N)s * degree),
-	                        degree, offset, left, right)) < randFloat (&seed))
-	        {
-	            shiftPathEnergyDiff (local_path + (%(N)s * degree),
-	                    degree, -offset, left, right);
-	        }
-	        else
-	        {
-	            local_accepts++;
-	        }
+            // Revert path shift if rejected by Metropolis step
+            if (exp (-%(epsilon)s *  shiftPathEnergyDiff (local_path + (%(N)s * degree),
+                            degree, offset, left, right)) < randFloat (&seed))
+            {
+                shiftPathEnergyDiff (local_path + (%(N)s * degree),
+                        degree, -offset, left, right);
+            }
+            else
+            {
+                local_accepts++;
+            }
 #endif
 
 #ifdef ENABLE_SINGLE_NODE_MOVE
-        	uint modPoint = (i*%(metroStepsPerOperatorRun)s+j)%% %(N)s;
-        	uint modPathPoint = (i*%(metroStepsPerOperatorRun)s+j)%% (%(N)s*%(DOF)s);
+// TODO: Make into its own function
+            uint modPoint = (i * %(metroStepsPerOperatorRun)s + j)%% %(N)s;
+            uint modPathPoint = (i * %(metroStepsPerOperatorRun)s+j)%% (%(N)s * %(DOF)s);
             //Arrange with the periodic boundary conditions.
             uint rightIndex = modPathPoint + 1;
             uint leftIndex = modPathPoint - 1;
@@ -522,11 +523,11 @@ metropolis (__global float *paths
                 - kinEnergyEst(local_path[modPathPoint],
                         local_path[rightIndex]);
 
-			PATH_TYPE_KEYWORD float *pathPointPtr=local_path + modPoint;
-			diffE -= potential(DOF_ARGUMENT_DATA);
-			local_path[modPathPoint] = modX;
-			diffE += potential(DOF_ARGUMENT_DATA);
-			local_path[modPathPoint] = oldX;
+            PATH_TYPE_KEYWORD float *pathPointPtr=local_path + modPoint;
+            diffE -= potential(DOF_ARGUMENT_DATA);
+            local_path[modPathPoint] = modX;
+            diffE += potential(DOF_ARGUMENT_DATA);
+            local_path[modPathPoint] = oldX;
 
             //Determine whether or not to accept the change in the path.
             if (native_exp(-%(epsilon)s*diffE) > randFloat(&seed))
@@ -552,72 +553,84 @@ metropolis (__global float *paths
 
 #ifdef ENABLE_PARALELLIZE_PATH
 #ifdef ENABLE_GLOBAL_PATH
-			barrier(CLK_GLOBAL_MEM_FENCE);
+            barrier(CLK_GLOBAL_MEM_FENCE);
 #else
-			barrier(CLK_LOCAL_MEM_FENCE);
+            barrier(CLK_LOCAL_MEM_FENCE);
 #endif
 #endif
-		}//end of metroStepsPerOperatorRun loop
+        }//end of metroStepsPerOperatorRun loop
 
 
 #if (defined ENABLE_OPERATOR) || (defined ENABLE_BINS) || (defined ENABLE_CORRELATOR)
 #ifdef ENABLE_PARALELLIZE_PATH
-		for(uint timeSlice=get_local_id(0)*%(2_POW_S)s;timeSlice<(get_local_id(0)+1)*%(2_POW_S)s;timeSlice++)
+        for(uint timeSlice = get_local_id(0) * %(2_POW_S)s;
+                timeSlice<(get_local_id(0)+1) * %(2_POW_S)s; timeSlice++)
 #else
-		for(uint timeSlice=0;timeSlice<%(N)s;timeSlice++)
+        for(uint timeSlice = 0; timeSlice < %(N)s; timeSlice++)
 #endif
-		{
+        {
 #ifdef ENABLE_OPERATOR
-			PATH_TYPE_KEYWORD float *pathPointPtr=local_path+timeSlice;
-			operator(DOF_ARGUMENT_DATA,opAccum);
+	    PATH_TYPE_KEYWORD float *pathPointPtr = local_path + timeSlice;
+	    operator(DOF_ARGUMENT_DATA, opAccum);
 #endif
 #ifdef ENABLE_BINS
-         	histogram (local_path + timeSlice,binCounts);
+            histogram (local_path + timeSlice,binCounts);
 #endif
 #ifdef ENABLE_CORRELATOR
 #ifdef ENABLE_PARALELLIZE_PATH
-			for(uint corTI=0;corTI<%(N)s/2;corTI++){
-			uint corT=corTI+get_local_id(0);
-			if(corT>=%(N)s/2)
-				corT-=%(N)s/2;
+	    for(uint corTI = 0; corTI< %(N)s / 2; corTI++)
+            {
+	        uint corT = corTI + get_local_id(0);
+		if(corT >= %(N)s/2)
+                {
+		    corT-=%(N)s/2;
+                }
+            }
 #else
-			for(uint corT=0;corT<%(N)s/2;corT++){
+	    for(uint corT=0;corT < %(N)s / 2; corT++)
+            {
 #endif
-				uint timeSlice2;
+	        uint timeSlice2;
 
-				if(timeSlice+corT<%(N)s)
-					timeSlice2=timeSlice+corT;
-				else
-					timeSlice2=timeSlice+corT-%(N)s;
+		if(timeSlice+corT < %(N)s)
+                {
+                    timeSlice2 = timeSlice + corT;
+                }
+	        else
+                {
+		    timeSlice2 = timeSlice + corT - %(N)s;
+                }
 
-    			float corProd[%(nbrOfCorrelators)s]={%(nbrOfCorrelatorsOnes)s};
-				PATH_TYPE_KEYWORD float *pathPointPtr=local_path+timeSlice;
-				correlator(DOF_ARGUMENT_DATA,corProd);
+    	            float corProd[%(nbrOfCorrelators)s] = {%(nbrOfCorrelatorsOnes)s};
+                    PATH_TYPE_KEYWORD float *pathPointPtr = local_path + timeSlice;
+                    correlator(DOF_ARGUMENT_DATA, corProd);
 
-				pathPointPtr=local_path+timeSlice2;
+                    pathPointPtr = local_path + timeSlice2;
 
-				correlator(DOF_ARGUMENT_DATA,corProd);
-				for(uint corI=0;corI<%(nbrOfCorrelators)s;corI++)
-				{
+                    correlator(DOF_ARGUMENT_DATA, corProd);
+                    for(uint corI = 0; corI < %(nbrOfCorrelators)s; corI++)
+                    {
 #ifdef ENABLE_PARALELLIZE_PATH
-		     		corMeans[walkerId*%(nbrOfCorrelators)s*%(N)s/2  +corI*%(N)s/2  +corT]+=corProd[corI];
+                        corMeans[walkerId * %(nbrOfCorrelators)s * %(N)s/2 +
+                                 corI * %(N)s/2  +corT]+=corProd[corI];
 #else
-		     		corMeans[threadId*%(nbrOfCorrelators)s*%(N)s/2  +corI*%(N)s/2  +corT]+=corProd[corI];
+                        corMeans[threadId*%(nbrOfCorrelators)s*%(N)s/2  +
+                                 corI*%(N)s/2  +corT]+=corProd[corI];
 #endif
-				}
+		    }
 #ifdef ENABLE_PARALELLIZE_PATH
-				barrier(CLK_GLOBAL_MEM_FENCE);
+		    barrier(CLK_GLOBAL_MEM_FENCE);
 #endif
          	}
 #endif
-		}
+	    }
 #endif
 
 	}//end of operatorRuns loop
 
 #ifdef ENABLE_OPERATOR
-	for(int op=0;op< %(nbrOfOperators)s;op++)
-    	opMeans[op+threadId*%(nbrOfOperators)s] = opAccum[op]*%(opNorm)s;
+	for(int op = 0; op < %(nbrOfOperators)s; op++)
+    	opMeans[op + threadId * %(nbrOfOperators)s] = opAccum[op] * %(opNorm)s;
 #endif
 
 #ifndef ENABLE_GLOBAL_PATH
@@ -626,7 +639,8 @@ metropolis (__global float *paths
 #ifdef ENABLE_PARALELLIZE_PATH
     for (uint i = 0; i < %(2_POW_S)s * %(DOF)s; i++)
     {
-        paths[walkerId * %(pathSize)s + i + get_local_id(0)*%(2_POW_S)s* %(DOF)s] = local_path[i + get_local_id(0)*%(2_POW_S)s* %(DOF)s];
+        paths[walkerId * %(pathSize)s + i + get_local_id(0) * %(2_POW_S)s * %(DOF)s]
+              = local_path[i + get_local_id(0)*%(2_POW_S)s* %(DOF)s];
     }
 #else
     for (uint i = 0; i < %(pathSize)s; i++)
