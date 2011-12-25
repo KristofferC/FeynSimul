@@ -640,7 +640,7 @@ metropolis (__global float *paths
     for (uint i = 0; i < %(2_POW_S)s * %(DOF)s; i++)
     {
         paths[walkerId * %(pathSize)s + i + get_local_id(0) * %(2_POW_S)s * %(DOF)s]
-              = local_path[i + get_local_id(0)*%(2_POW_S)s* %(DOF)s];
+              = local_path[i + get_local_id(0) * %(2_POW_S)s * %(DOF)s];
     }
 #else
     for (uint i = 0; i < %(pathSize)s; i++)
