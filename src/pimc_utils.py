@@ -1,25 +1,28 @@
-# Does a run with the lm2m2 potential for 3 particles.
-
 import sys
-import numpy as np
+import os
 from datetime import datetime
 from time import time
 import csv
 
-def modN(runparams, savePathsInterval, systemClass, endTime
-        , continueRun=False):
+import numpy as np
+
+from host import *
+
+def modN(RP, savePathsInterval, systemClass, endTime
+        , experimentName, continueRun=False):
 
     startClock = time()
-    maxWgSize = 512
+    maxWGSize = 512
     pathChanges = 0
     timestamp  = datetime.now().strftime("%Y-%m-%d/%H.%M.%S")
-    filename = "results/" + experimentName + "/" + timestamp + "data"
+    filename = "results/" + experimentName + "/" + timestamp + "/data"
 
     # Create directory to store results and paths
     if not os.path.exists("results/" + experimentName + "/" + timestamp):
         os.makedirs("results/" + experimentName + "/" + timestamp)
 
-    startN = RP.N
+    endN = RP.N
+    startN = 8
     RP.S = 1
 
     if continueRun:
@@ -55,15 +58,15 @@ def modN(runparams, savePathsInterval, systemClass, endTime
 
                     # Linear interpolation to create new nodes in between nodes
                     # from old path.
-                    newPaths[walker, secondIndices + 1] = (newPaths[threadID,
+                    newPaths[walker, secondIndices + 1] = (newPaths[walker,
                             secondIndices] + newPaths[walker, secondIndices + 2]) / 2.0
 
         # If first run
         else:
             if not continueRun:
                 # Create a random path
-                initialPaths = (2.0 * np.random.rand((RP.nbrOfWalkers,RP.N *
-                    systemClass.DOF)) - 1.0) * 0.1
+                initialPaths = (2.0 * np.random.rand(RP.nbrOfWalkers,RP.N *
+                    systemClass.DOF) - 1.0) * 0.1
             else:
                 initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
                 reader = csv.reader(open(continueRun[0]), delimiter='\t')
@@ -74,11 +77,11 @@ def modN(runparams, savePathsInterval, systemClass, endTime
 
         KE.paths.data.release()
         KE.paths = cl.array.to_device(KE.queue,initialPaths.astype(np.float32))
-
+        
         RP.returnPaths = False
-        nRuns = 0
+        nRuns = 1
         while (nRuns < max(RP.N / 8, 10) or RP.N == endN):
-            if time() - startClock < endTime:
+            if time() - startClock > endTime:
                 return
 
             # Save paths
@@ -86,14 +89,16 @@ def modN(runparams, savePathsInterval, systemClass, endTime
                 print("Saving paths...")
 
                 RP.returnPaths = True
+                KE = loadKernel(systemClass, RP)
                 RKR = runKernel(KE)
                 RP.returnPaths = False
                 pathChanges += RP.getMetroStepsPerRun()
                 output(filename, RP.N, time() - startClock, pathChanges
-                        , RKR.acceptanceRate,RKR.operatorMean,RP.beta,RP.S)
+                        , RKR.acceptanceRate, RKR.operatorMean
+                        , RP.beta, RP.S)
                 f = open("results/" + experimentName + "/" + timestamp +
                          "/pathsN" + str(RP.N) + "episode" +
-                         str(int(j/savePathsInterval)), 'wb')
+                         str(int(nRuns / savePathsInterval)), 'wb')
                 csvWriter = csv.writer(f, delimiter='\t')
                 for aPath in RKR.paths:
                     csvWriter.writerow(aPath)
@@ -109,6 +114,7 @@ def modN(runparams, savePathsInterval, systemClass, endTime
         # Last run for this N so need to save paths
         if RP.N != endN:
             RP.returnPaths = True
+            KE = loadKernel(systemClass, RP)
             RKR = runKernel(KE)
             pathChanges += RP.getMetroStepsPerRun()
             output(filename, RP.N, time()-startClock, pathChanges
@@ -126,15 +132,18 @@ def modN(runparams, savePathsInterval, systemClass, endTime
 def output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S):
 
-    print("N: " f str(N)+"\tS: "+str(S)+"\tbeta: "+str(beta)+"\tAR: " + str(acceptanceRate))
+    print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " + 
+          str(beta)+"\tAR: " + str(acceptanceRate))
 
-    f_data = open(filename + ".tsv",'ra')
+    f_data = open(filename + ".tsv", 'a')
 
-
-    if f_data.read() == "": # Add a heading describing the columns.
+    # Add a heading describing the columns if file is empty.
+    if  os.path.getsize(filename + ".tsv") == 0:
         f_data.write("#N\tTime\tpathChanges\tAR\tS")
         for i in range(len(operatorMean)):
-             f_data.write("\tOperator " + str(i))
+            for j in range(len(operatorMean[0])):
+             f_data.write("\tOperator " + str(i) + ", Thread " + str(j) )
+        f_data.write("\n")
 
     f_data.write(str(N)+"\t")
     f_data.write(str(t)+"\t")
@@ -144,7 +153,6 @@ def output(filename, N, t, pathChanges, acceptanceRate
     for walkerOperators in operatorMean:
         for op in walkerOperators:
             f_data.write(str(op)+"\t")
-
     f_data.write("\n")
     f_data.close()
 
