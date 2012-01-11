@@ -6,27 +6,18 @@ from datetime import datetime
 from time import time
 import csv
 
+def modN(runparams, savePathsInterval, systemClass, endTime, endN
+        , continueRun=False):
 
-
-
-
-# Time to run simul
-
-# How often to save paths.
-
-
-def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
-        continueRun=False):
-
-    startClock=time()
+    startClock = time()
     maxWgSize = 512
     pathChanges = 0
     timestamp  = datetime.now().strftime("%Y-%m-%d/%H.%M.%S")
-    filename = "results/"+experimentName+"/" + timestamp + "/modNBisect"
+    filename = "results/" + experimentName + "/" + timestamp + "data"
 
     # Create directory to store results and paths
-    if not os.path.exists("results/"+experimentName+"/" + timestamp):
-        os.makedirs("results/"+experimentName+"/" + timestamp)
+    if not os.path.exists("results/" + experimentName + "/" + timestamp):
+        os.makedirs("results/" + experimentName + "/" + timestamp)
 
     startN = 8
     RP.S = 1
@@ -36,17 +27,15 @@ def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
         RP.S = continueRun[2]
 
     # RP.N = startN, 16, .... , endN
-    for RP.N in [2 ** i for i in range(int(np.log2(startN) + 0.5))
-                 , int(np.log2(endN) + 0.5))]:
-
-        if time() - startClock > endTime:
-            break
+    for RP.N in [2 ** i for i in range(int(np.log2(startN) + 0.5)
+                 , int(np.log2(endN) + 1.0))]:
 
         # Make sure S is large enough to not use too many walkers in a WG
         while RP.nbrOfWalkersPerWorkGroup * RP.N / (2 ** RP.S) > maxWGSize:
             RP.S+=1
 
-        RP.returnPaths = True
+
+        # TODO: Should be able to specify
         RP.operatorRuns = max(RP.N / 8, 1)
         RP.metroStepsPerOperatorRun = 10
         RP.returnOperator = True
@@ -54,22 +43,21 @@ def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
         KE = loadKernel(systemClass, RP)
 
         # If not first run create a new path by interpolating
-        if RP.N != startN:
+        if not RP.N == startN:
             newPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
             for walker in range(RP.nbrOfWalkers):
                 for DOF in range(systemClass.DOF):
                     secondIndices = DOF * RP.N + np.array(range(0, RP.N / 2))
                     # Nodes from the old path is copied to every second node in
                     # new path.
-                    newPaths[walker, secondIndices]
-                          = RKR.paths[walker , secondIndices - RP.N * DOF / 2]
+                    newPaths[walker, secondIndices] = RKR.paths[walker
+                            , secondIndices - RP.N * DOF / 2]
 
                     # Linear interpolation to create new nodes in between nodes
                     # from old path.
                     newPaths[walker, secondIndices + 1] = (newPaths[threadID,
                             secondIndices] + newPaths[walker, secondIndices + 2]) / 2.0
 
-            KE.paths.data.release()
         # If first run
         else:
             if not continueRun:
@@ -84,10 +72,11 @@ def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
                     initialPaths[k] = [float(v) for v in row]
                     k += 1
 
+        KE.paths.data.release()
         KE.paths = cl.array.to_device(KE.queue,initialPaths.astype(np.float32))
 
         RP.returnPaths = False
-
+        nRuns = 0
         while (nRuns < max(RP.N / 8, 10) or RP.N == endN):
             if time() - startClock < endTime:
                 return
@@ -102,7 +91,9 @@ def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
                 pathChanges += RP.getMetroStepsPerRun()
                 output(filename, RP.N, time() - startClock, pathChanges
                         , RKR.acceptanceRate,RKR.operatorMean,RP.beta,RP.S)
-                f = open("results/"+experimentName+"/" + timestamp+"/pathsN"+str(RP.N)+"episode"+str(int(j/savePathsInterval)),'wb')
+                f = open("results/" + experimentName + "/" + timestamp +
+                         "/pathsN" + str(RP.N) + "episode" +
+                         str(int(j/savePathsInterval)), 'wb')
                 csvWriter = csv.writer(f, delimiter='\t')
                 for aPath in RKR.paths:
                     csvWriter.writerow(aPath)
@@ -111,7 +102,8 @@ def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
 
             RKR = runKernel(KE)
             pathChanges += RP.getMetroStepsPerRun()
-            output(filename, RP.N,time()-startClock, pathChanges, RKR.acceptanceRate,RKR.operatorMean,RP.beta,RP.S)
+            output(filename, RP.N,time()-startClock, pathChanges
+                   , RKR.acceptanceRate,RKR.operatorMean,RP.beta,RP.S)
             nRuns += 1
 
         # Last run for this N so need to save paths
@@ -119,8 +111,9 @@ def modN(runparams, endTime, savePathsInterval, systemClass, endTime, endN,
             RP.returnPaths = True
             RKR = runKernel(KE)
             pathChanges += RP.getMetroStepsPerRun()
-            output(filename,RP.N,time()-startClock,pathChanges,RKR.acceptanceRate,RKR.operatorMean,RP.beta,RP.S)
-T
+            output(filename, RP.N, time()-startClock, pathChanges
+                   , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
+
         # Change S to move acceptance rate in the right direction
         if RKR.acceptanceRate > 0.5:
             RP.S = min(i - 1, RP.S + 2)
@@ -131,16 +124,16 @@ T
 
 
 def output(filename, N, t, pathChanges, acceptanceRate
-           , operatorMean, beta, S, firstRun=False):
+           , operatorMean, beta, S):
 
-    print("N: " + str(N)+"\tS: "+str(S)+"\tbeta: "+str(beta)+"\tAR: " + str(acceptanceRate))
+    print("N: " f str(N)+"\tS: "+str(S)+"\tbeta: "+str(beta)+"\tAR: " + str(acceptanceRate))
 
-    f_data = open(filename + ".tsv",'a')
+    f_data = open(filename + ".tsv",'ra')
 
 
-    if firstRun: # Add a heading describing the columns.
+    if f_data.read() == "": # Add a heading describing the columns.
         f_data.write("#N\tTime\tpathChanges\tAR\tS")
-         for i in range(len(operatorMean)):
+        for i in range(len(operatorMean)):
              f_data.write("\tOperator " + str(i))
 
     f_data.write(str(N)+"\t")
