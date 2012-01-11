@@ -6,7 +6,7 @@ from datetime import datetime
 from time import time
 import csv
 
-def modN(runparams, savePathsInterval, systemClass, endTime, endN
+def modN(runparams, savePathsInterval, systemClass, endTime
         , continueRun=False):
 
     startClock = time()
@@ -19,7 +19,7 @@ def modN(runparams, savePathsInterval, systemClass, endTime, endN
     if not os.path.exists("results/" + experimentName + "/" + timestamp):
         os.makedirs("results/" + experimentName + "/" + timestamp)
 
-    startN = 8
+    startN = RP.N
     RP.S = 1
 
     if continueRun:
