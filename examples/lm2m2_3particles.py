@@ -33,7 +33,6 @@ RP.returnBinCounts = False
 RP.beta = 100
 RP.nbrOfWalkersPerWorkGroup = 4
 
-saveOpValNum = 0
 
 # Time to run simul
 endTime = 60 * 60 * 24 * 14
@@ -43,4 +42,5 @@ savePathsInterval = 3000
 systemClass = Lm2m2_3part()
 RP.operators=(systemClass.energyOp,systemClass.meanSquaredRadiusOp,systemClass.meanRadiusOp)
 
+# Run the simulation function
 modN(RP, savePathsInterval, systemClass, endTime, "lm2m2_3part")

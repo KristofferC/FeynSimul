@@ -91,6 +91,7 @@ def modN(RP, savePathsInterval, systemClass, endTime
                 RP.returnPaths = True
                 KE = loadKernel(systemClass, RP)
                 RKR = runKernel(KE)
+                nRuns += 1
                 RP.returnPaths = False
                 pathChanges += RP.getMetroStepsPerRun()
                 output(filename, RP.N, time() - startClock, pathChanges
@@ -106,10 +107,10 @@ def modN(RP, savePathsInterval, systemClass, endTime
                 print("Paths saved!")
 
             RKR = runKernel(KE)
+            nRuns += 1
             pathChanges += RP.getMetroStepsPerRun()
             output(filename, RP.N, time()-startClock, pathChanges
                    , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
-            nRuns += 1
 
         # Last run for this N so need to save paths
         if RP.N != endN:
@@ -135,7 +136,7 @@ def output(filename, N, t, pathChanges, acceptanceRate
 
     print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
           str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s" +
-          str(np.mean(operatorMean, axis = 0)))
+          str(np.mean(operatorMean, axis = 1)))
 
     f_data = open(filename + ".tsv", 'a')
 
