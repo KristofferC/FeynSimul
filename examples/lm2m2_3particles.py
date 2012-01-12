@@ -21,7 +21,7 @@ experimentName="lm2m2_3part/"
 
 RP = RunParams()
 RP.nbrOfWalkers = 64
-RP.N = 1024 * 1
+RP.N = 1024 * 64
 RP.getOperator = True
 RP.enablePathShift = False
 RP.enableBisection = True
@@ -30,7 +30,7 @@ RP.enableGlobalPath = True
 RP.enableGlobalOldPath = True
 RP.enableParallelizePath = True
 RP.returnBinCounts = False
-RP.beta = 100
+RP.beta = 1000
 RP.nbrOfWalkersPerWorkGroup = 4
 
 
@@ -42,5 +42,17 @@ savePathsInterval = 3000
 systemClass = Lm2m2_3part()
 RP.operators=(systemClass.energyOp,systemClass.meanSquaredRadiusOp,systemClass.meanRadiusOp)
 
+
+def opRunsFormula(N, S):
+    return max(2 ** 10 / 2 ** S, 1)
+
+def mStepsPerOPRun(N, S):
+    return 10
+
+def runsPerN(N, S):
+    return max(RP.N / 8, 10)
+
+
 # Run the simulation function
-modN(RP, savePathsInterval, systemClass, endTime, "lm2m2_3part")
+modN(RP, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
+     , mStepsPerOPRun, runsPerN)

@@ -8,7 +8,8 @@ import numpy as np
 from host import *
 
 def modN(RP, savePathsInterval, systemClass, endTime
-        , experimentName, continueRun=False):
+        , experimentName, opRunsFormula, mStepsPerOPRun
+        , runsPerN, continueRun=False):
 
     startClock = time()
     maxWGSize = 512
@@ -38,8 +39,8 @@ def modN(RP, savePathsInterval, systemClass, endTime
 
 
         # TODO: Should be able to specify
-        RP.operatorRuns = max(RP.N / 8, 1)
-        RP.metroStepsPerOperatorRun = 10
+        RP.operatorRuns = opRunsFormula(RP.N, RP.S)
+        RP.metroStepsPerOperatorRun = mStepsPerOPRun(RP.N, RP.S)
         RP.returnOperator = True
 
         KE = loadKernel(systemClass, RP)
@@ -79,7 +80,7 @@ def modN(RP, savePathsInterval, systemClass, endTime
 
         RP.returnPaths = False
         nRuns = 1
-        runsThisN = max(RP.N / 8, 10)
+        runsThisN = runsPerN(RP.N, RP.S)
         while (nRuns <= runsThisN or RP.N == endN):
             if time() - startClock > endTime:
                 return
@@ -142,6 +143,7 @@ def output(filename, N, t, pathChanges, acceptanceRate
 
     # Add a heading describing the columns if file is empty.
     if  os.path.getsize(filename + ".tsv") == 0:
+        f_data.write("#Beta: " + str(beta) + "\n")
         f_data.write("#N\tTime\tpathChanges\tAR\tS")
         for i in range(len(operatorMean)):
             for j in range(len(operatorMean[0])):
@@ -159,4 +161,3 @@ def output(filename, N, t, pathChanges, acceptanceRate
     f_data.write("\n")
     f_data.close()
 
-# modN("directory to last path").
