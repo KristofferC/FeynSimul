@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Feynman.  If not, see <http://www.gnu.org/licenses/>.
+# along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
 
 
 # Does a run with the lm2m2 potential for 3 particles.
@@ -32,8 +32,6 @@ from pimc_utils import *
 
 sys.path.append(sys.path[0] + "/../src/physical_systems/")
 from lm2m2_3part import *
-
-experimentName="lm2m2_3part/"
 
 RP = RunParams()
 RP.nbrOfWalkers = 64
@@ -56,7 +54,8 @@ endTime = 60 * 60 * 24 * 14
 # How often to save paths.
 savePathsInterval = 3000
 systemClass = Lm2m2_3part()
-RP.operators=(systemClass.energyOp,systemClass.meanSquaredRadiusOp,systemClass.meanRadiusOp)
+RP.operators = (systemClass.energyOp, systemClass.meanSquaredRadiusOp
+              , systemClass.meanRadiusOp)
 
 
 def opRunsFormula(N, S):
