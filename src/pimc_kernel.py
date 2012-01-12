@@ -2,6 +2,8 @@
 import numpy as np
 import pyopencl as cl
 
+# Hej PETTER!
+
 def humanReadableSize(size):
     """
     Converts a size in bytes to human readable form.
