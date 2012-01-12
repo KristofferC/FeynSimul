@@ -33,8 +33,6 @@ from pimc_utils import *
 sys.path.append(sys.path[0] + "/../src/physical_systems/")
 from lm2m2_3part import *
 
-experimentName="lm2m2_3part/"
-
 RP = RunParams()
 RP.nbrOfWalkers = 64
 RP.N = 1024 * 64
@@ -56,7 +54,8 @@ endTime = 60 * 60 * 24 * 14
 # How often to save paths.
 savePathsInterval = 3000
 systemClass = Lm2m2_3part()
-RP.operators=(systemClass.energyOp,systemClass.meanSquaredRadiusOp,systemClass.meanRadiusOp)
+RP.operators = (systemClass.energyOp, systemClass.meanSquaredRadiusOp
+              , systemClass.meanRadiusOp)
 
 
 def opRunsFormula(N, S):
