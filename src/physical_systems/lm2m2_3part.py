@@ -2,22 +2,15 @@
 
 
 class Lm2m2_3part:
-
     def __init__(self):
-        #lm2m2_try2 was used below, not so much simplification of energyop...
-        #kernel beta of 1000 gives real temp of 50 mK
-        #lm2m2partsys.nb was used for generating potential and energy operator
+        #kernel beta of 1000 gives real temp of 15 mK
         self.DOF = 6
-        #source for following three values:http://iopscience.iop.org/0953-4075/35/3/305/pdf/b20305.pdf
-        #(they seem to be far from exact)
-        self.groundStateEnergy=-0.4#K
-        self.meanSquaredRadius=7.15**2.0#Angstrom^2
-        self.meanSquaredAtomDist=10.7**2.0#Angstrom^2
-        self.xUnit=4.92341e-11 #Meter
-        self.potentialUnit=6.90325e-22 #Joule
+        self.groundStateEnergy=-0.126#K
+        self.xUnit=8.98888e-11 #Meter
+        self.potentialUnit=2.07098e-22 #Joule
         self.meanSquaredRadiusOp="""0.33333333333333*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6))"""
         self.meanRadiusOp="""0.13608276*(2.0f*sqrt(sqr(x4) + sqr(x5) + sqr(x6)) + sqrt(3.0f*sqr(x1) + 3.0f*sqr(x2) + 3.0f*sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6) - 3.4641016*x1*x4 - 3.4641016*x2*x5 - 3.4641016*x3*x6) + sqrt(3.0f*sqr(x1) + 3.0f*sqr(x2) + 3.0f*sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6) + 3.4641016*x1*x4 + 3.4641016*x2*x5 + 3.4641016*x3*x6))"""
-        self.meanSquaredAtomDistOp="""?"""
+        self.meanSquaredAtomDistOp="""sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6)"""
         self.userCode = """
         inline float sqr(float x){return x*x;}                 
         float lm2m2(float r)
