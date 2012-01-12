@@ -1,4 +1,3 @@
-import sys
 import os
 from datetime import datetime
 from time import time
@@ -35,7 +34,7 @@ def modN(RP, savePathsInterval, systemClass, endTime
 
         # Make sure S is large enough to not use too many walkers in a WG
         while RP.nbrOfWalkersPerWorkGroup * RP.N / (2 ** RP.S) > maxWGSize:
-            RP.S+=1
+            RP.S += 1
 
 
         # TODO: Should be able to specify
@@ -76,16 +75,17 @@ def modN(RP, savePathsInterval, systemClass, endTime
                     k += 1
 
         KE.paths.data.release()
-        KE.paths = cl.array.to_device(KE.queue,initialPaths.astype(np.float32))
-        
+        KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
+
         RP.returnPaths = False
         nRuns = 1
-        while (nRuns < max(RP.N / 8, 10) or RP.N == endN):
+        runsThisN = max(RP.N / 8, 10)
+        while (nRuns <= runsThisN or RP.N == endN):
             if time() - startClock > endTime:
                 return
 
             # Save paths
-            if nRuns % savePathsInterval == 0:
+            if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 print("Saving paths...")
 
                 RP.returnPaths = True
@@ -107,8 +107,8 @@ def modN(RP, savePathsInterval, systemClass, endTime
 
             RKR = runKernel(KE)
             pathChanges += RP.getMetroStepsPerRun()
-            output(filename, RP.N,time()-startClock, pathChanges
-                   , RKR.acceptanceRate,RKR.operatorMean,RP.beta,RP.S)
+            output(filename, RP.N, time()-startClock, pathChanges
+                   , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
             nRuns += 1
 
         # Last run for this N so need to save paths
@@ -116,6 +116,7 @@ def modN(RP, savePathsInterval, systemClass, endTime
             RP.returnPaths = True
             KE = loadKernel(systemClass, RP)
             RKR = runKernel(KE)
+            RP.returnPaths = False
             pathChanges += RP.getMetroStepsPerRun()
             output(filename, RP.N, time()-startClock, pathChanges
                    , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
@@ -132,8 +133,9 @@ def modN(RP, savePathsInterval, systemClass, endTime
 def output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S):
 
-    print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " + 
-          str(beta)+"\tAR: " + str(acceptanceRate))
+    print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
+          str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s" +
+          str(np.mean(operatorMean, axis = 0)))
 
     f_data = open(filename + ".tsv", 'a')
 
