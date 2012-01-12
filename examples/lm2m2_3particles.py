@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Feynman.  If not, see <http://www.gnu.org/licenses/>.
+# along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
 
 
 # Does a run with the lm2m2 potential for 3 particles.
