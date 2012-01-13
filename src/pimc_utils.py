@@ -19,18 +19,16 @@ from datetime import datetime
 from time import time
 import sys
 
-import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
 from host import *
 
-def modN(RP, savePathsInterval, systemClass, endTime
+def modN(RP, startXList, savePathsInterval, systemClass, endTime
         , experimentName, opRunsFormula, mStepsPerOPRun
-        , runsPerN, continueRun=False):
+        ,startN, runsPerN, maxWGSize, continueRun=False):
 
     startClock = time()
-    maxWGSize = 512
     pathChanges = 0
     timestamp  = datetime.now().strftime("%Y-%m-%d/%H.%M.%S")
     filename = "results/" + experimentName + "/" + timestamp + "/data"
@@ -40,14 +38,13 @@ def modN(RP, savePathsInterval, systemClass, endTime
         os.makedirs("results/" + experimentName + "/" + timestamp)
 
     endN = RP.N
-    startN = 8
     RP.S = 1
 
     if continueRun:
         startN = continueRun[1]
         RP.S = continueRun[2]
 
-    # RP.N = startN, 16, .... , endN
+    # RP.N = startN, 2*startN, .... , endN
     for RP.N in [2 ** i for i in range(int(np.log2(startN) + 0.5)
                  , int(np.log2(endN) + 1.0))]:
 
@@ -90,15 +87,17 @@ def modN(RP, savePathsInterval, systemClass, endTime
         # If first run
         else:
             if not continueRun:
-                # Create a random path
-                initialPaths = (2.0 * np.random.rand(RP.nbrOfWalkers,RP.N *
-                    systemClass.DOF) - 1.0) * 0.1
+                initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
+                for i in range(RP.nbrOfWalkers):
+                    for j in range(systemClass.DOF):
+                        initialPaths[i][j*RP.N:(j+1)*RP.N] = (np.ones(RP.N) *
+                            startXList[i][j])
             else:
                 initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
                 reader = csv.reader(open(continueRun[0]), delimiter='\t')
                 k = 0
                 for row in reader:
-                    initialPaths[k] = [float(v) for v in row]
+                    initialPaths[k] = map(float,row)
                     k += 1
 
             KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
@@ -184,107 +183,3 @@ def output(filename, N, t, pathChanges, acceptanceRate
             f_data.write(str(op)+"\t")
     f_data.write("\n")
     f_data.close()
-
-
-def plotit(systemClass, dataFile, burnRatio, nOperators):
-
-    # Physical constants
-    a0 = 0.52917721092e-10  # Bohr radius in meters
-    kB = 1.3806488e-23  # Boltzmanns constant in J/K
-
-    # Conversion factors from units used in physical system to more
-    # standard units.
-    en2Kelv = systemClass.potentialUnit / kB
-    len2BRad = systemClass.xUnit / a0
-
-    # Load the data file and extract the parameters and op values.
-    data = np.loadtxt(dataFile)
-    generalData = data[:, 0:5]
-    opData = data[:, 5:]
-
-    nWalkers = len(opData[0]) / nOperators
-    nRuns = len(generalData)
-
-    N = data[:, 0].astype('int')
-    S = data[:, 4].astype('int')
-    AR = data[:, 3].astype('int')
-
-    # Format the opData in a 3 dimensional array where the first index is the
-    # operator, second is the walker, and the third is the run
-    operatorMeansPerRun = np.empty((nOperators, nWalkers, nRuns))
-    for i in range(nOperators):
-        operatorMeansPerRun[i] = (np.array(opData[:, i * nWalkers:
-                                 (i + 1) * nWalkers])).transpose()
-
-    n = N[0]
-    end = 0
-    operatorMeansPerRunPerN = []
-    burntOperatorMeansPerRunPerN = []
-    operatorMeansPerN = []
-    operatorMeansStdPerN = []
-    runIndexPerN = []
-    while n <= N[-1]:
-        start = end
-        if n == N[-1]:
-            end = len(N)
-        else:
-            while N[end] == N[start]:
-                end = end + 1
-        runIndexPerN.append(range(start, end))
-        operatorMeansPerRunPerN.append(operatorMeansPerRun[:, :, start:end])
-        burntOperatorMeansPerRunPerN.append(operatorMeansPerRun[:, :, (start +
-                                   int(float(end - start) * burnRatio)):end])
-        operatorMeansPerN.append(burntOperatorMeansPerRunPerN[-1].mean(axis=2))
-        n *= 2
-
-    ####################
-    # PLOT MEAN RADIUS
-    ####################
-
-    plt.figure(1)
-    for i in range(nWalkers):
-        plt.plot(operatorMeansPerRun[2, i, :] * sys.xUnit / a0)
-
-    plt.xlabel('Run number')
-    plt.ylabel('Mean radius [Bohr radius]')
-    plt.grid(True)
-
-    ####################
-    # PLOT MEAN ENERGY
-    ####################
-
-    plt.figure(2)
-    for i in range(len(operatorMeansPerRunPerN)):
-        plt.plot(runIndexPerN[i],
-                operatorMeansPerRunPerN[i][0, :, :].mean(axis=0) * en2Kelv,
-                label=str(N[runIndexPerN[i][0]]))
-    plt.xlabel('Run number')
-    plt.ylabel('Energy, [K]')
-    plt.legend(loc=4)
-    plt.grid(True)
-
-    ####################
-    # PRINT CI FOR OPS
-    ####################
-
-    print('N= ' + str(N[-1]) + ", 95% CI:")
-
-    mean = operatorMeansPerN[-1][0, :].mean() * en2Kelv
-    std = operatorMeansPerN[-1][0, :].std() / np.sqrt(nWalkers) * en2Kelv
-    print("Mean energy: [" + "%.4f" % (mean - 1.96 * std)
-            + ',' + "%.4f" % (mean + 1.96 * std) + '] K')
-
-    derivative = 0.5 / np.sqrt(operatorMeansPerN[-1][1, :].mean())
-    mean = np.sqrt(operatorMeansPerN[-1][1, :].mean()) * len2BRad
-    std = (operatorMeansPerN[-1][1, :].std() / np.sqrt(nWalkers)
-            * derivative * len2BRad)
-    print("Root mean square radius: [" + "%.4f" % (mean - 1.96 * std)
-            + ',' + "%.4f" % (mean + 1.96 * std) + '] a0')
-
-    mean = operatorMeansPerN[-1][2, :].mean() * len2BRad
-    std = operatorMeansPerN[-1][2, :].std() / np.sqrt(nWalkers) * len2BRad
-    print("Mean radius: [" + "%.4f" % (mean - 1.96 * std)
-            + ',' + "%.4f" % (mean + 1.96 * std) + '] a0')
-
-    plt.show()
-
