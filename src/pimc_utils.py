@@ -23,13 +23,9 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
-sys.path.append(sys.path[0] + "/physical_systems/")
-from lm2m2_4part import *
-sys = Lm2m2_4part()
+from host import *
 
-#from host import *
-
-"""def modN(RP, savePathsInterval, systemClass, endTime
+def modN(RP, savePathsInterval, systemClass, endTime
         , experimentName, opRunsFormula, mStepsPerOPRun
         , runsPerN, continueRun=False):
 
@@ -154,7 +150,7 @@ sys = Lm2m2_4part()
             RP.S = max(1, RP.S - 1)
 
 
-#def output(filename, N, t, pathChanges, acceptanceRate
+def output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S):
 
     print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
@@ -182,7 +178,7 @@ sys = Lm2m2_4part()
             f_data.write(str(op)+"\t")
     f_data.write("\n")
     f_data.close()
-"""
+
 
 def plotit(systemClass, dataFile, burnRatio, nOperators):
 
