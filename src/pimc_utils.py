@@ -55,14 +55,13 @@ def modN(RP, savePathsInterval, systemClass, endTime
         while RP.nbrOfWalkersPerWorkGroup * RP.N / (2 ** RP.S) > maxWGSize:
             RP.S += 1
         
-        print RP.S
 
         RP.operatorRuns = opRunsFormula(RP.N, RP.S)
         RP.metroStepsPerOperatorRun = mStepsPerOPRun(RP.N, RP.S)
         RP.returnOperator = True
 
         KE = loadKernel(systemClass, RP)
-        print KE.getStats()
+
         # If not first run create a new path by interpolating
         if not RP.N == startN:
             newPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
@@ -83,9 +82,11 @@ def modN(RP, savePathsInterval, systemClass, endTime
                     rightIndex[-1] -= RP.N
                     newPaths[walker, secondIndices + 1] = (newPaths[walker,
                         secondIndices] + newPaths[walker, rightIndex]) / 2.0
-            print RKR.paths
-            print "------------------------_"
-            print newPaths
+                   
+                    KE.paths.data.release()
+                    KE.paths = cl.array.to_device(KE.queue, 
+                                                  newPaths.astype(np.float32))
+
         # If first run
         else:
             if not continueRun:
@@ -100,10 +101,8 @@ def modN(RP, savePathsInterval, systemClass, endTime
                     initialPaths[k] = [float(v) for v in row]
                     k += 1
 
-        KE.paths.data.release()
-        KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
+            KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
 
-        RP.returnPaths = False
         nRuns = 1
         runsThisN = runsPerN(RP.N, RP.S)
         while (nRuns <= runsThisN or RP.N == endN):
@@ -131,7 +130,7 @@ def modN(RP, savePathsInterval, systemClass, endTime
                     csvWriter.writerow(aPath)
                 f.close()
                 print("Paths saved!")
-
+            
             RKR = runKernel(KE)
             nRuns += 1
             pathChanges += RP.getMetroStepsPerRun()
