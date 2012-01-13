@@ -188,8 +188,8 @@ def plotit(systemClass, dataFile, burnRatio, nOperators):
 
     # Conversion factors from units used in physical system to more
     # standard units.
-    en2Kelv = sys.potentialUnit / kB
-    len2BRad = sys.xUnit / a0
+    en2Kelv = systemClass.potentialUnit / kB
+    len2BRad = systemClass.xUnit / a0
 
     # Load the data file and extract the parameters and op values.
     data = np.loadtxt(dataFile)
