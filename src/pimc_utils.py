@@ -54,31 +54,38 @@ def modN(RP, savePathsInterval, systemClass, endTime
         # Make sure S is large enough to not use too many walkers in a WG
         while RP.nbrOfWalkersPerWorkGroup * RP.N / (2 ** RP.S) > maxWGSize:
             RP.S += 1
+        
+        print RP.S
 
-
-        # TODO: Should be able to specify
         RP.operatorRuns = opRunsFormula(RP.N, RP.S)
         RP.metroStepsPerOperatorRun = mStepsPerOPRun(RP.N, RP.S)
         RP.returnOperator = True
 
         KE = loadKernel(systemClass, RP)
-
+        print KE.getStats()
         # If not first run create a new path by interpolating
         if not RP.N == startN:
             newPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
             for walker in range(RP.nbrOfWalkers):
                 for DOF in range(systemClass.DOF):
-                    secondIndices = DOF * RP.N + np.array(range(0, RP.N / 2))
+                    secondIndices = DOF * RP.N + np.array(range(0, RP.N, 2))
                     # Nodes from the old path is copied to every second node in
                     # new path.
                     newPaths[walker, secondIndices] = RKR.paths[walker
-                            , secondIndices - RP.N * DOF / 2]
+                            , secondIndices / 2]
+
 
                     # Linear interpolation to create new nodes in between nodes
                     # from old path.
+                    
+                    # Fix periodic boundary conditions
+                    rightIndex = secondIndices + 2
+                    rightIndex[-1] -= RP.N
                     newPaths[walker, secondIndices + 1] = (newPaths[walker,
-                            secondIndices] + newPaths[walker, secondIndices + 2]) / 2.0
-
+                        secondIndices] + newPaths[walker, rightIndex]) / 2.0
+            print RKR.paths
+            print "------------------------_"
+            print newPaths
         # If first run
         else:
             if not continueRun:
@@ -154,7 +161,7 @@ def output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S):
 
     print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
-          str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s" +
+          str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s " +
           str(np.mean(operatorMean, axis = 1)))
 
     f_data = open(filename + ".tsv", 'a')
