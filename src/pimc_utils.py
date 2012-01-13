@@ -193,14 +193,14 @@ def plotit(systemClass, dataFile, burnRatio, nOperators):
 
     # Load the data file and extract the parameters and op values.
     data = np.loadtxt(dataFile)
-    generalData = data[:, 0:6]
-    opData = data[:, 6:]
+    generalData = data[:, 0:5]
+    opData = data[:, 5:]
 
     nWalkers = len(opData[0]) / nOperators
     nRuns = len(generalData)
 
     N = data[:, 0].astype('int')
-    S = data[:, 5].astype('int')
+    S = data[:, 4].astype('int')
     AR = data[:, 3].astype('int')
 
     # Format the opData in a 3 dimensional array where the first index is the
