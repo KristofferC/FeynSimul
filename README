@@ -1,4 +1,4 @@
-FeynSimul version 0.2 released 12 - 01 - 2012
+FeynSimul version 0.3 released 14 - 01 - 2012
 
 FeynSimul is a tool to use a GPU to do estimatations of ground state operator means for quantum mechanical systems. The program uses a Monte Carlo method to do high dimensional integrals that arise from the path integral formulation of quantum mechanics.
 
