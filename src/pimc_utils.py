@@ -51,7 +51,7 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
         # Make sure S is large enough to not use too many walkers in a WG
         while RP.nbrOfWalkersPerWorkGroup * RP.N / (2 ** RP.S) > maxWGSize:
             RP.S += 1
-        
+
 
         RP.operatorRuns = opRunsFormula(RP.N, RP.S)
         RP.metroStepsPerOperatorRun = mStepsPerOPRun(RP.N, RP.S)
@@ -73,15 +73,15 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
 
                     # Linear interpolation to create new nodes in between nodes
                     # from old path.
-                    
+
                     # Fix periodic boundary conditions
                     rightIndex = secondIndices + 2
                     rightIndex[-1] -= RP.N
                     newPaths[walker, secondIndices + 1] = (newPaths[walker,
                         secondIndices] + newPaths[walker, rightIndex]) / 2.0
-                   
+
                     KE.paths.data.release()
-                    KE.paths = cl.array.to_device(KE.queue, 
+                    KE.paths = cl.array.to_device(KE.queue,
                                                   newPaths.astype(np.float32))
 
         # If first run
@@ -112,11 +112,10 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 print("Saving paths...")
 
-                RP.returnPaths = True
-                KE = loadKernel(systemClass, RP)
+                KE.RP.returnPaths = True
                 RKR = runKernel(KE)
                 nRuns += 1
-                RP.returnPaths = False
+                KE.RP.returnPaths = False
                 pathChanges += RP.getMetroStepsPerRun()
                 output(filename, RP.N, time() - startClock, pathChanges
                         , RKR.acceptanceRate, RKR.operatorMean
@@ -129,7 +128,7 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
                     csvWriter.writerow(aPath)
                 f.close()
                 print("Paths saved!")
-            
+
             RKR = runKernel(KE)
             nRuns += 1
             pathChanges += RP.getMetroStepsPerRun()
@@ -138,10 +137,9 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
 
         # Last run for this N so need to save paths
         if RP.N != endN:
-            RP.returnPaths = True
-            KE = loadKernel(systemClass, RP)
+            KE.RP.returnPaths = True
             RKR = runKernel(KE)
-            RP.returnPaths = False
+            KE.RP.returnPaths = False
             pathChanges += RP.getMetroStepsPerRun()
             output(filename, RP.N, time()-startClock, pathChanges
                    , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
