@@ -112,10 +112,10 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 print("Saving paths...")
 
-                KE.RP.returnPaths = True
+                KE.runParams.returnPaths = True
                 RKR = runKernel(KE)
                 nRuns += 1
-                KE.RP.returnPaths = False
+                KE.runParams.returnPaths = False
                 pathChanges += RP.getMetroStepsPerRun()
                 output(filename, RP.N, time() - startClock, pathChanges
                         , RKR.acceptanceRate, RKR.operatorMean
@@ -137,9 +137,9 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
 
         # Last run for this N so need to save paths
         if RP.N != endN:
-            KE.RP.returnPaths = True
+            KE.runParams.returnPaths = True
             RKR = runKernel(KE)
-            KE.RP.returnPaths = False
+            KE.runParams.returnPaths = False
             pathChanges += RP.getMetroStepsPerRun()
             output(filename, RP.N, time()-startClock, pathChanges
                    , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
