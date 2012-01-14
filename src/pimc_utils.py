@@ -17,18 +17,18 @@
 import os
 from datetime import datetime
 from time import time
-import csv
+import sys
 
+import csv
 import numpy as np
 
 from host import *
 
-def modN(RP, savePathsInterval, systemClass, endTime
+def modN(RP, startXList, savePathsInterval, systemClass, endTime
         , experimentName, opRunsFormula, mStepsPerOPRun
-        , runsPerN, continueRun=False):
+        ,startN, runsPerN, maxWGSize, continueRun=False):
 
     startClock = time()
-    maxWGSize = 512
     pathChanges = 0
     timestamp  = datetime.now().strftime("%Y-%m-%d/%H.%M.%S")
     filename = "results/" + experimentName + "/" + timestamp + "/data"
@@ -38,14 +38,13 @@ def modN(RP, savePathsInterval, systemClass, endTime
         os.makedirs("results/" + experimentName + "/" + timestamp)
 
     endN = RP.N
-    startN = 8
     RP.S = 1
 
     if continueRun:
         startN = continueRun[1]
         RP.S = continueRun[2]
 
-    # RP.N = startN, 16, .... , endN
+    # RP.N = startN, 2*startN, .... , endN
     for RP.N in [2 ** i for i in range(int(np.log2(startN) + 0.5)
                  , int(np.log2(endN) + 1.0))]:
 
@@ -54,7 +53,6 @@ def modN(RP, savePathsInterval, systemClass, endTime
             RP.S += 1
 
 
-        # TODO: Should be able to specify
         RP.operatorRuns = opRunsFormula(RP.N, RP.S)
         RP.metroStepsPerOperatorRun = mStepsPerOPRun(RP.N, RP.S)
         RP.returnOperator = True
@@ -66,35 +64,44 @@ def modN(RP, savePathsInterval, systemClass, endTime
             newPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
             for walker in range(RP.nbrOfWalkers):
                 for DOF in range(systemClass.DOF):
-                    secondIndices = DOF * RP.N + np.array(range(0, RP.N / 2))
+                    secondIndices = DOF * RP.N + np.array(range(0, RP.N, 2))
                     # Nodes from the old path is copied to every second node in
                     # new path.
                     newPaths[walker, secondIndices] = RKR.paths[walker
-                            , secondIndices - RP.N * DOF / 2]
+                            , secondIndices / 2]
+
 
                     # Linear interpolation to create new nodes in between nodes
                     # from old path.
+
+                    # Fix periodic boundary conditions
+                    rightIndex = secondIndices + 2
+                    rightIndex[-1] -= RP.N
                     newPaths[walker, secondIndices + 1] = (newPaths[walker,
-                            secondIndices] + newPaths[walker, secondIndices + 2]) / 2.0
+                        secondIndices] + newPaths[walker, rightIndex]) / 2.0
+
+                    KE.paths.data.release()
+                    KE.paths = cl.array.to_device(KE.queue,
+                                                  newPaths.astype(np.float32))
 
         # If first run
         else:
             if not continueRun:
-                # Create a random path
-                initialPaths = (2.0 * np.random.rand(RP.nbrOfWalkers,RP.N *
-                    systemClass.DOF) - 1.0) * 0.1
+                initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
+                for i in range(RP.nbrOfWalkers):
+                    for j in range(systemClass.DOF):
+                        initialPaths[i][j*RP.N:(j+1)*RP.N] = (np.ones(RP.N) *
+                            startXList[i][j])
             else:
                 initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
                 reader = csv.reader(open(continueRun[0]), delimiter='\t')
                 k = 0
                 for row in reader:
-                    initialPaths[k] = [float(v) for v in row]
+                    initialPaths[k] = map(float,row)
                     k += 1
 
-        KE.paths.data.release()
-        KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
+            KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
 
-        RP.returnPaths = False
         nRuns = 1
         runsThisN = runsPerN(RP.N, RP.S)
         while (nRuns <= runsThisN or RP.N == endN):
@@ -105,11 +112,10 @@ def modN(RP, savePathsInterval, systemClass, endTime
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 print("Saving paths...")
 
-                RP.returnPaths = True
-                KE = loadKernel(systemClass, RP)
+                KE.runParams.returnPaths = True
                 RKR = runKernel(KE)
                 nRuns += 1
-                RP.returnPaths = False
+                KE.runParams.returnPaths = False
                 pathChanges += RP.getMetroStepsPerRun()
                 output(filename, RP.N, time() - startClock, pathChanges
                         , RKR.acceptanceRate, RKR.operatorMean
@@ -131,10 +137,9 @@ def modN(RP, savePathsInterval, systemClass, endTime
 
         # Last run for this N so need to save paths
         if RP.N != endN:
-            RP.returnPaths = True
-            KE = loadKernel(systemClass, RP)
+            KE.runParams.returnPaths = True
             RKR = runKernel(KE)
-            RP.returnPaths = False
+            KE.runParams.returnPaths = False
             pathChanges += RP.getMetroStepsPerRun()
             output(filename, RP.N, time()-startClock, pathChanges
                    , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
@@ -152,7 +157,7 @@ def output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S):
 
     print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
-          str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s" +
+          str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s " +
           str(np.mean(operatorMean, axis = 1)))
 
     f_data = open(filename + ".tsv", 'a')
@@ -176,4 +181,3 @@ def output(filename, N, t, pathChanges, acceptanceRate
             f_data.write(str(op)+"\t")
     f_data.write("\n")
     f_data.close()
-

@@ -17,9 +17,7 @@
 
 
 class Lm2m2_4part:
-
     def __init__(self):
-        #lm2m2_try2 was used below, not so much simplification of energyop...
         #kernel beta of 1000 gives real temp of 50 mK
         #lm2m2partsys.nb was used for generating potential and energy operator
         self.DOF = 9
@@ -32,7 +30,7 @@ class Lm2m2_4part:
         self.potentialUnit=6.90325e-22 #Joule
         self.meanSquaredRadiusOp="""0.25*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6) + sqr(x7) + sqr(x8) + sqr(x9))"""
         self.meanRadiusOp="""0.072168784*(3.0f*sqrt(sqr(x7) + sqr(x8) + sqr(x9)) + sqrt(8.0f*sqr(x4) + 8.0f*sqr(x5) + 8.0f*sqr(x6) + sqr(x7) + sqr(x8) + sqr(x9) - 5.6568542*x4*x7 - 5.6568542*x5*x8 - 5.6568542*x6*x9) + sqrt(6.0f*sqr(x1) + 6.0f*sqr(x2) + 6.0f*sqr(x3) + 2.0f*sqr(x4) + 2.0f*sqr(x5) + 2.0f*sqr(x6) + sqr(x7) + sqr(x8) + sqr(x9) + 6.9282032*x1*x4 + 6.9282032*x2*x5 + 6.9282032*x3*x6 + 4.8989795*x1*x7 + 2.8284271*x4*x7 + 4.8989795*x2*x8 + 2.8284271*x5*x8 + 4.8989795*x3*x9 + 2.8284271*x6*x9) + sqrt(6.0f*sqr(x1) + 6.0f*sqr(x2) + 6.0f*sqr(x3) + 2.0f*sqr(x4) + 2.0f*sqr(x5) + 2.0f*sqr(x6) + sqr(x7) + sqr(x8) + sqr(x9) + 2.8284271*x4*x7 - 2.0f*x1*(3.4641016*x4 + 2.4494897*x7) + 2.8284271*x5*x8 - 2.0f*x2*(3.4641016*x5 + 2.4494897*x8) + 2.8284271*x6*x9 - 3.4641016*x3*(2.0f*x6 + 1.4142136*x9)))"""
-        self.meanSquaredAtomDistOp="""?"""
+        self.meanSquaredAtomDistOp="""0.66666667*(sqr(x1) + sqr(x2) + sqr(x3) + sqr(x4) + sqr(x5) + sqr(x6) + sqr(x7) + sqr(x8) + sqr(x9))"""
         self.userCode = """
         inline float sqr(float x){return x*x;}                 
         float lm2m2(float r)

@@ -67,7 +67,8 @@ def mStepsPerOPRun(N, S):
 def runsPerN(N, S):
     return max(RP.N / 8, 10)
 
+startXList=np.random.uniform(size=(RP.nbrOfWalkers,systemClass.DOF),low=-1.0,high=1.0)*0.01
 
 # Run the simulation function
-modN(RP, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
-     , mStepsPerOPRun, runsPerN)
+modN(RP, startXList, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
+     , mStepsPerOPRun, 8, runsPerN, 512)
