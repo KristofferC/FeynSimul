@@ -12,9 +12,9 @@ means for bosonic quantum mechanical systems. The program uses a Monte Carlo met
 
 System Requirements
 ----
-Graphic card with drivers compatible with OpenCL
-Python 2.6 with PyOpenCL module.
-
++ Graphic card with drivers compatible with OpenCL
++ Python 2.6 with [PyOpenCL](http://mathema.tician.de/software/pyopencl) and
+  [numpy](http://numpy.scipy.org/).
 
 Downloading
 ----
