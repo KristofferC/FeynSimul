@@ -313,9 +313,6 @@ class PIMCKernel:
         @rtype: L{RunKernelResults}
         @return: Contains the results of running the kernel.
         """
-
-        RKR = RunKernelResults()
-
         #Run kernel. The buffers for all pyopencl.array objects are passed
         #by the .data parameter.
 
@@ -340,62 +337,48 @@ class PIMCKernel:
         #print(self._getStats())
 
         startTime = time()
-        kernelObj = self._kernel(self._queue,
+        self._kernelObj = self._kernel(self._queue,
                                           self._globalSize,
                                           self._localSize,
                                           *args)
 
         #Wait until the threads have finished and then calculate total run time
         try:
-            kernelObj.wait()
+            self._kernelObj.wait()
         except pyopencl.RuntimeError:
             if time() - startTime > 5.0:
-                raise Exception("Kernel runtime error. 5 seconds passed "
-                                "and kernel aborted.")
+                raise Exception("Kernel runtime error. Over 5 seconds had passed "
+                                "when kernel aborted.")
             else:
                 raise
 
-        RKR.runTime = 1e-9 * (kernelObj.profile.end - kernelObj.profile.start)
-
-        #Fetch the operatorValues and acceptanceRate pyopencl.array objects from
-        #the graphics card to the RAM.
-        RKR.acceptanceRate = (self._accepts.get() /
-                              float(operatorRuns
-                              * metroStepsPerOperatorRun)).mean()
-
-        if returnOperator:
-            if not self._enableOperator:
-                raise Exception("Can only return operator when "
-                                "enableOperator = True")
-            else:
-                rawOpVector = self._operatorValues.get()
-                RKR.operatorMean = np.empty((len(operators),
-                    nbrOfWalkers))
-
-                if enableParallelizePath:
-                    nbrOfThreadsPerWalker = N / (2 ** S)
-
-                    for j in range(len(operators)):
-                        for i in range(nbrOfWalkers):
-                            RKR.operatorMean[j, i] = (rawOpVector[j +
-                                i * len(operators) * nbrOfThreadsPerWalker+
-                               np.array(range(nbrOfThreadsPerWalker)) *
-                               len(operators)].mean())
-                else:
-                    for j in range(len(operators)):
-                        for i in range(nbrOfWalkers):
-                            RKR.operatorMean[j, i] = rawOpVector[j + i *
-                                    len(operators)].mean()
-
-        if returnCorrelator:
-
-
-        
     def getPaths(self):
         return self._paths.get()
         
     def getOperators(self):
-        return
+        if not self._enableOperator:
+                raise Exception("Can only return operator when "
+                                "enableOperator = True")
+        rawOpVector = self._operatorValues.get()
+        RKR.operatorMean = np.empty((len(operators),
+            nbrOfWalkers))
+
+        if enableParallelizePath:
+            nbrOfThreadsPerWalker = N / (2 ** S)
+
+            for j in range(len(operators)):
+                for i in range(nbrOfWalkers):
+                    RKR.operatorMean[j, i] = (rawOpVector[j +
+                    i * len(operators) * nbrOfThreadsPerWalker +
+                    np.array(range(nbrOfThreadsPerWalker)) *
+                    len(operators)].mean())
+        else:
+            for j in range(len(operators)):
+                for i in range(nbrOfWalkers):
+                    RKR.operatorMean[j, i] = rawOpVector[j + i *
+                        len(operators)].mean()
+
+
     def getCorrelator(self):
         if not enableCorrelator:
             raise Exception("Can only return correlator when "
@@ -405,8 +388,8 @@ class PIMCKernel:
                        float(operatorRuns * N))
         RKR.correlatorStandardError = (correlatorValues.std(axis = 0) /
                         np.sqrt(self._nbrOfWalkers))
-       def getBinCounts(self):
-           if not self._enableBins:
+    def getBinCounts(self):
+        if not self._enableBins:
             raise Exception("Can only return bins when "
                             "kernalArg.enableBins = True")
         #Sum the bin counts from all individual threads.
@@ -418,7 +401,14 @@ class PIMCKernel:
         # Normalize probability density
         RKR.binCountNormed = (self._binCounts.get().astype(np.float32)
                               / (binVol * totBinCount))
-                              
+    def getRunTime(self):
+        return 1e-9 * (self._kernelObj.profile.end - 
+        self._kernelObj.profile.start)
+
+    def getAcceptanceRate(self):
+        return (self._accepts.get() / float(self._operatorRuns
+        * self._metrostepsPerOperatorRun)).mean()
+
     def getStats(self):
         """
         Returns information about memory usage of the loaded PIMCKernel.
