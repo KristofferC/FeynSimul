@@ -25,8 +25,8 @@ import numpy as np
 import pylab as pl
 
 sys.path.append(sys.path[0] + "/../src/")
-from run_params import *
-from host import *
+from kernel_args import *
+from kernel import *
 
 # Import the harmonic oscillator class
 sys.path.append(sys.path[0] + "/../src/physical_systems/")
@@ -36,48 +36,49 @@ from harm_osc import *
 HO_syst = HarmOsc()
 
 # Set the run parameters
-HO_runparams = RunParams()
-HO_runparams.nbrOfWalkers = 448*2
-HO_runparams.N = 256
-HO_runparams.S = 6
-HO_runparams.beta = 11
-HO_runparams.operatorRuns = 100
-HO_runparams.returnOperator = True
-HO_runparams.metroStepsPerOperatorRun = 40
-HO_runparams.enableBisection = True
-HO_runparams.enableParallelizePath = True
-HO_runparams.binsEnabled = True
-HO_runparams.returnBinCounts = True
-HO_runparams.xmin = -4.0
-HO_runparams.xmax = 4.0
-HO_runparams.enableBins = True
-HO_runparams.binResolutionPerDOF = 60
-HO_runparams.nbrOfWalkersPerWorkGroup = 4
+ka = kernelArgs()
+ka.nbrOfWalkers = 448*2
+ka.N = 256
+ka.S = 6
+ka.beta = 11
+ka.operatorRuns = 100
+ka.returnOperator = True
+ka.metroStepsPerOperatorRun = 40
+ka.enableBisection = True
+ka.enableParallelizePath = True
+ka.binsEnabled = True
+ka.returnBinCounts = True
+ka.xmin = -4.0
+ka.xmax = 4.0
+ka.enableBins = True
+ka.binResolutionPerDOF = 60
+ka.nbrOfWalkersPerWorkGroup = 4
 plotWaveFunction = False
 
 # Set the operator
-HO_runparams.operators  = (HO_syst.energyOp,)
+ka.operators  = (HO_syst.energyOp,)
+ka.system = HO_syst
 
 # Load kernel
-HO_kernelEnvironment = loadKernel(HO_syst, HO_runparams)
+kernel = Kernel(ka)
 
 # Run kernel
-HO_kernelResults = runKernel(HO_kernelEnvironment)
+kernel.run()
 
 # Print the results
-print "Mean: " + str(np.mean(HO_kernelResults.operatorMean))
+print "Mean: " + str(np.mean(kernel.getOperators()))
 #print "Standard error: " + str(HO_kernelResults.operatorStandardError)
 #print "Acceptance rate: " + str(HO_kernelResults.acceptanceRate)
 #print "Time for GPU to finish calculations: " + str(HO_kernelResults.runTime)
 
 #Plot resulting wavefunction
 
-if plotWaveFunction and RP.binsEnabled:
+if plotWaveFunction and ka.binsEnabled:
   
 # x interval for plot, + 0.5 * binSize to have each value in the middle of bins
-    binSize = (HO_runparams.xmax - HO_runparams.xmin) / HO_runparams.binResolutionPerDOF
-    x = np.linspace(HO_runparams.xmin, HO_runparams.xmax - binSize,
-                HO_runparams.binResolutionPerDOF) + 0.5 * binSize
-    pl.plot(x, HO_kernelResults.binCountNormed,'*')
+    binSize = (ka.xmax - ka.xmin) / ka.binResolutionPerDOF
+    x = np.linspace(ka.xmin, ka.xmax - binSize,
+                ka.binResolutionPerDOF) + 0.5 * binSize
+    pl.plot(x,kernel.getBins(),'*')
     pl.show()
 
