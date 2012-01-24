@@ -18,12 +18,12 @@ import numpy as np
 from time import time
 from collections import defaultdict
 import os
+import copy
 
 import pyopencl as cl
 import pyopencl.array
 import pyopencl.clrandom
 import pyopencl.clmath
-
 
 def humanReadableSize(size):
     """
@@ -53,20 +53,38 @@ class PIMCKernel:
         sent to the GPU is built and memory allocations on the GPU are done.
 
         @type ka: L{kernelArgs} class
-        @param system: An instance of kernelArgs describing what kind of 
+        @param self._system: An instance of kernelArgs describing what kind of 
         kernel to build.
         """
-        self._enableBins = enableBins
-        self._returnBinCounts = returnBinCounts
-        self._enableOperator = enableOperator
-        self._enableCorrelator = enableCorrelator
-        self._enablePathShift = enablePathShift
-        self._enableBisection = enableBisection
-        self._enableSingleNodeMove = enableSingleNodeMove
-        self._enableParallelizePath = enableParallelizePath
-        self._enableGlobalPath = enableGlobalPath
-        self._enableGlobalOldPath = enableGlobalOldPath
+        self._enableBins = ka.enableBins
+        self._enableOperator = ka.enableOperator
+        self._enableCorrelator = ka.enableCorrelator
+        self._enablePathShift = ka.enablePathShift
+        self._enableBisection = ka.enableBisection
+        self._enableSingleNodeMove = ka.enableSingleNodeMove
+        self._enableParallelizePath = ka.enableParallelizePath
+        self._enableGlobalPath = ka.enableGlobalPath
+        self._enableGlobalOldPath = ka.enableGlobalOldPath
+        self._nbrOfWalkers = ka.nbrOfWalkers
+        self._nbrOfWalkersPerWorkGroup = ka.nbrOfWalkersPerWorkGroup
+        self._N = ka.N 
+        self._S = ka.S 
+        self._beta = ka.beta
+        self._operatorRuns = ka.operatorRuns
+        self._metroStepsPerOperatorRun = ka.metroStepsPerOperatorRun
+        self._system = copy.copy(ka.system)
         
+        if self._enableOperator:
+            self._operators = ka.operators
+
+        if self._enableCorrelator:
+            self._correlators = ka.correlators
+        
+        if self._enableBins:
+            self._binResolutionPerDOF = ka.binResolutionPerDOF
+            self._xMin = ka.xMin
+            self._xMax = ka.xMax
+
         if not (self._nbrOfWalkers / self._nbrOfWalkersPerWorkGroup *
                self._nbrOfWalkersPerWorkGroup == self._nbrOfWalkers):
             raise Exception("The number of walkers must be a multiple "
@@ -137,16 +155,16 @@ class PIMCKernel:
             defines += "#define ENABLE_PARALELLIZE_PATH\n"
 
         defines += "#define DOF_ARGUMENT_DECL "
-        for i in range(system.DOF):
+        for i in range(self._system.DOF):
             defines += "float x" + str(i + 1)
-            if (i != system.DOF - 1):
+            if (i != self._system.DOF - 1):
                 defines += ","
         defines += "\n"
 
         defines += "#define DOF_ARGUMENT_DATA "
-        for i in range(system.DOF):
+        for i in range(self._system.DOF):
             defines += "pathPointPtr[" + str(i) + " * " + str(self._N) + "]"
-            if (i != system.DOF - 1):
+            if (i != self._system.DOF - 1):
                 defines += ","
         defines += "\n"
 
@@ -180,13 +198,13 @@ class PIMCKernel:
 
         replacements['nbrOfWalkersPerWorkGroup'] = self._nbrOfWalkersPerWorkGroup
         replacements['N'] = '%d' % self._N
-        replacements['potential'] = system.potential
+        replacements['potential'] = self._system.potential
         replacements['epsilon'] = '%ef' % (self._beta / float(self._N))
         replacements['epsilon_inv2'] = '%ef' % ((float(self._N) / self._beta) ** 2)
-        replacements['pathSize'] = '%d' % (system.DOF * self._N)
+        replacements['pathSize'] = '%d' % (self._system.DOF * self._N)
         replacements['defines'] = defines
-        replacements['userCode'] = system.userCode
-        replacements['DOF'] = '%d' % system.DOF
+        replacements['userCode'] = self._system.userCode
+        replacements['DOF'] = '%d' % self._system.DOF
         replacements['operatorRuns'] = '%d' % self._operatorRuns
         replacements['metroStepsPerOperatorRun'] = ('%d'
                 % self._metroStepsPerOperatorRun)
@@ -215,12 +233,12 @@ class PIMCKernel:
             replacements['PSAlpha'] = '%ef' % self._PSAlpha
 
         if self._enableBins:
-            replacements['xmin'] = '%ef' % self._xmin
-            replacements['xmax'] = '%ef' % self._xmax
+            replacements['xMin'] = '%ef' % self._xMin
+            replacements['xMax'] = '%ef' % self._xMax
             replacements['binsPerPart'] = '%d' % self._binResolutionPerDOF
-            replacements['nbrOfBins'] = '%d' % self._binResolutionPerDOF ** system.DOF
+            replacements['nbrOfBins'] = '%d' % self._binResolutionPerDOF ** self._system.DOF
             replacements['invBinSize'] = '%ef' % (float(self._binResolutionPerDOF) /
-                                         float(self._xmax - self._xmin))
+                                         float(self._xMax - self._xMin))
 
         #Import kernel code and paste 'replacements' into it
         kernelCode_r = open(os.path.dirname(__file__) +
@@ -255,7 +273,7 @@ class PIMCKernel:
         #meaning no movement of the particles)
         try:
             self._paths = cl.array.zeros(self._queue,
-                              (self._nbrOfWalkers, self._N * system.DOF),
+                              (self._nbrOfWalkers, self._N * self._system.DOF),
                               np.float32)
 
             #Buffer for storing number of accepted values and
@@ -284,13 +302,13 @@ class PIMCKernel:
             if self._enableGlobalOldPath:
                 self._oldPath = cl.array.zeros(self._queue,
                                     (self._nbrOfThreads,
-                                    (2 ** self._S - 1) * system.DOF), np.float32)
+                                    (2 ** self._S - 1) * self._system.DOF), np.float32)
 
             #A buffer for the multidimensional array for storing
             #the resulting number of bin counts
             if self._enableBins:
                 binTouple = (self._binResolutionPerDOF,)
-                for i in range(1, system.DOF):
+                for i in range(1, self._system.DOF):
                     binTouple += (self._binResolutionPerDOF,)
                 self._binCounts = cl.array.zeros(self._queue,
                         binTouple, np.uint32)
@@ -299,11 +317,9 @@ class PIMCKernel:
             raise Exception("Unable to allocate global "
                             "memory on device, out of memory?")
 
-        system = copy(system)
-        nbrOfOperators = len(self._operators)
     def run(self):
         """
-        Runs the kernel with the system and the run parameters.
+        Runs the kernel with the self._system and the run parameters.
 
         This will start the kernel on the GPU. When the GPU is done desired
         data is fetched.
@@ -360,46 +376,48 @@ class PIMCKernel:
                 raise Exception("Can only return operator when "
                                 "enableOperator = True")
         rawOpVector = self._operatorValues.get()
-        RKR.operatorMean = np.empty((len(operators),
-            nbrOfWalkers))
+        operatorMean = np.empty((len(self._operators),
+            self._nbrOfWalkers))
 
-        if enableParallelizePath:
-            nbrOfThreadsPerWalker = N / (2 ** S)
+        if self._enableParallelizePath:
+            nbrOfThreadsPerWalker = self._N / (2 ** self._S)
 
-            for j in range(len(operators)):
-                for i in range(nbrOfWalkers):
-                    RKR.operatorMean[j, i] = (rawOpVector[j +
-                    i * len(operators) * nbrOfThreadsPerWalker +
+            for j in range(len(self._operators)):
+                for i in range(self._nbrOfWalkers):
+                    operatorMean[j, i] = (rawOpVector[j +
+                    i * len(self._operators) * nbrOfThreadsPerWalker +
                     np.array(range(nbrOfThreadsPerWalker)) *
-                    len(operators)].mean())
+                    len(self._operators)].mean())
         else:
-            for j in range(len(operators)):
-                for i in range(nbrOfWalkers):
-                    RKR.operatorMean[j, i] = rawOpVector[j + i *
-                        len(operators)].mean()
-
+            for j in range(len(self._operators)):
+                for i in range(self._nbrOfWalkers):
+                    operatorMean[j, i] = rawOpVector[j + i *
+                        len(self._operators)].mean()
+        return operatorMean
 
     def getCorrelator(self):
-        if not enableCorrelator:
+        if not self._enableCorrelator:
             raise Exception("Can only return correlator when "
                             "kernalArg.enableCorrelator = True")
         correlatorValues = self._correlatorValues.get()
-        RKR.correlatorMean = (correlatorValues.mean(axis = 0) /
+        correlatorMean = (correlatorValues.mean(axis = 0) /
                        float(operatorRuns * N))
-        RKR.correlatorStandardError = (correlatorValues.std(axis = 0) /
+        correlatorStandardError = (correlatorValues.std(axis = 0) /
                         np.sqrt(self._nbrOfWalkers))
+        return (correlatorMean, correlatorStandardError)
+
     def getBinCounts(self):
         if not self._enableBins:
             raise Exception("Can only return bins when "
                             "kernalArg.enableBins = True")
         #Sum the bin counts from all individual threads.
-        totBinCount = (nbrOfWalkers * operatorRuns
+        totBinCount = (self._nbrOfWalkers * self._operatorRuns
                 * N)
-        binVol = ((float(xmax - xmin)
-                 / float(binResolutionPerDOF)) **
+        binVol = ((float(self._xMax - self._xMin)
+                 / float(self._binResolutionPerDOF)) **
                  self._system.DOF)
         # Normalize probability density
-        RKR.binCountNormed = (self._binCounts.get().astype(np.float32)
+        return (self._binCounts.get().astype(np.float32)
                               / (binVol * totBinCount))
     def getRunTime(self):
         return 1e-9 * (self._kernelObj.profile.end - 
@@ -429,16 +447,16 @@ class PIMCKernel:
         usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
         usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers * self._N *
-                             self._system.DOF * 4)  # path
+                             self._self._system.DOF * 4)  # path
         usedGlobalMemory += (self._nbrOfThreads
                             * self._nbrOfOperators * 4)  # operator
         if self._enableGlobalOldPath:
             usedGlobalMemory += (self._nbrOfThreads *
                                 (2 ** self._S - 1)
-                                 * self._system.DOF * 4)
+                                 * self._self._system.DOF * 4)
         if self._enableBins:
             usedGlobalMemory += (self._binsPerPart **
-                                self._system.DOF * 4)
+                                self._self._system.DOF * 4)
 
         ret += ("Global memory (used/max): " +
                 humanReadableSize(usedGlobalMemory) + " / " +
@@ -488,18 +506,18 @@ class PIMCKernel:
         usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
         usedGlobalMemory += self._nbrOfThreads * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers *
-                            self._N * self._system.DOF * 4)  # path
+                            self._N * self._self._system.DOF * 4)  # path
         usedGlobalMemory += (self._nbrOfThreads
                             * self._nbrOfOperators * 4)  # operator
 
         if self._enableGlobalOldPath:
             usedGlobalMemory += (self._nbrOfThreads *
                                  (2 ** self._S - 1)
-                                 * self._system.DOF * 4)
+                                 * self._self._system.DOF * 4)
 
         if self._enableBins:
             usedGlobalMemory += (self._binsPerPart
-                                ** self._system.DOF * 4)
+                                ** self._self._system.DOF * 4)
 
         if(usedGlobalMemory > dev.get_info(cl.device_info.GLOBAL_MEM_SIZE)):
             return True

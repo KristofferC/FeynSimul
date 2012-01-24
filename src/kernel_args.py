@@ -22,4 +22,4 @@ __docformat__ = 'epytext en'
 
 
 class KernelArgs:
-
+    pass
