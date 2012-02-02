@@ -71,4 +71,5 @@ startXList=np.random.uniform(size=(ka.nbrOfWalkers,ka.system.DOF)
 
 # Run the simulation function
 modN(ka, startXList, savePathsInterval, "lm2m2_3part", opRunsFormula
-     , mStepsPerOPRun,  runsPerN, 512, runTime=endTime, finalN=1024*64)
+     , mStepsPerOPRun,  runsPerN, 512, runTime=endTime, finalN=1024*64,
+     verbose=True)

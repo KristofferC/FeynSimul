@@ -27,7 +27,7 @@ from kernel import *
 
 def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula, 
         mStepsPerOPRun, runsPerN, maxWGSize, continueRun=False, finalN=-1,
-        runTime=-1):
+        runTime=-1, verbose=False):
 
     startClock = time()
     pathChanges = 0
@@ -50,10 +50,18 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
     firstNRun = True
 
     while finalN==-1 or kaMod.N <= finalN:
-        ka.operatorRuns = opRunsFormula(kaMod.N, kaMod.S)
-        ka.metroStepsPerOperatorRun = mStepsPerOPRun(kaMod.N, kaMod.S)
+        # Make sure S is large enough to not use too many walkers in a WG
+        while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
+            kaMod.S += 1
+
+        kaMod.operatorRuns = opRunsFormula(kaMod.N, kaMod.S)
+        kaMod.metroStepsPerOperatorRun = mStepsPerOPRun(kaMod.N, kaMod.S)
 
         kernel=PIMCKernel(kaMod)
+        if verbose:
+            print("New kernel compiled, getStats():")
+            print(kernel.getStats())
+            print("Run results:")
 
         # If not first run create a new path by interpolating
         if firstNRun:
@@ -94,8 +102,14 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
         runsThisN = runsPerN(kaMod.N, kaMod.S)
         while nRuns <= runsThisN or kaMod.N == finalN:
             if runTime != -1 and time() - startClock > runTime:
+                if verbose:
+                    print("Time limit reached!")
                 return
-
+            kernel.run()
+            pathChanges += kernel.getMetroStepsPerRun()
+            output(filename, kaMod.N, time()-startClock, pathChanges
+                   , kernel.getAcceptanceRate(), kernel.getOperators()
+                   , ka.beta, kaMod.S,verbose=verbose)
             # Save paths
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 with open("results/" + experimentName + "/" + timestamp +
@@ -104,14 +118,9 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                     csvWriter = csv.writer(f, delimiter='\t')
                     for aPath in kernel.getPaths():
                         csvWriter.writerow(aPath)
-                print("Paths saved!")
-
-            kernel.run()
+                if verbose:
+                    print("Paths saved!")
             nRuns += 1
-            pathChanges += kernel.getMetroStepsPerRun()
-            output(filename, kaMod.N, time()-startClock, pathChanges
-                   , kernel.getAcceptanceRate(), kernel.getOperators
-                   , ka.beta, kaMod.S)
 
         #do preparations for next run that are not to be done first run
         if kaMod.N != finalN:
@@ -126,17 +135,14 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                 kaMod.S = min(i - 1, kaMod.S + 1)
             if ar < 0.1:
                 kaMod.S = max(1, kaMod.S - 1)
-             # Make sure S is large enough to not use too many walkers in a WG
-            while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
-                kaMod.S += 1
             kaMod.N *= 2
 
 def output(filename, N, t, pathChanges, acceptanceRate
-           , operatorMean, beta, S):
-
-    print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
-          str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s " +
-          str(np.mean(operatorMean, axis = 1)))
+           , operatorMean, beta, S, verbose=False):
+    if verbose:
+        print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
+                str(beta)+"\tAR: " + str(acceptanceRate) + "\tOPs: " +
+            str(np.mean(operatorMean, axis = 1)))
 
     with open(filename + ".tsv", 'a') as f_data:
         # Add a heading describing the columns if file is empty.

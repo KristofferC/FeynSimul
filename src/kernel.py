@@ -376,8 +376,8 @@ class PIMCKernel:
 
     def getOperators(self):
         if not self._enableOperator:
-                raise Exception("Can only return operator when "
-                                "enableOperator = True")
+                raise Exception("Can only return operator when created with"
+                                "kernelArg.enableOperator = True")
         rawOpVector = self._operatorValues.get()
         operatorMean = np.empty((len(self._operators),
             self._nbrOfWalkers))
@@ -400,7 +400,7 @@ class PIMCKernel:
 
     def getCorrelator(self):
         if not self._enableCorrelator:
-            raise Exception("Can only return correlator when "
+            raise Exception("Can only return correlator when created with"
                             "kernalArg.enableCorrelator = True")
         correlatorValues = self._correlatorValues.get()
         correlatorMean = (correlatorValues.mean(axis = 0) /
@@ -435,16 +435,16 @@ class PIMCKernel:
         usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
         usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers * self._N *
-                             self._self._system.DOF * 4)  # path
+                             self._system.DOF * 4)  # path
         usedGlobalMemory += (self._nbrOfThreads
-                            * self._nbrOfOperators * 4)  # operator
+                            * len(self._operators) * 4)  # operator
         if self._enableGlobalOldPath:
             usedGlobalMemory += (self._nbrOfThreads *
                                 (2 ** self._S - 1)
-                                 * self._self._system.DOF * 4)
+                                 * self._system.DOF * 4)
         if self._enableBins:
             usedGlobalMemory += (self._binsPerPart **
-                                self._self._system.DOF * 4)
+                                self._system.DOF * 4)
         return usedGlobalMemory
 
     def getStats(self):
