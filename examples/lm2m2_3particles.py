@@ -7,7 +7,7 @@
 #
 # FeynSimul is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PUka.SE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -33,19 +33,19 @@ from pimc_utils import *
 sys.path.append(sys.path[0] + "/../src/physical_systems/")
 from lm2m2_3part import *
 
-RP = RunParams()
-RP.nbrOfWalkers = 64
-RP.N = 1024 * 64
-RP.getOperator = True
-RP.enablePathShift = False
-RP.enableBisection = True
-RP.enableSingleNodeMove = False
-RP.enableGlobalPath = True
-RP.enableGlobalOldPath = True
-RP.enableParallelizePath = True
-RP.returnBinCounts = False
-RP.beta = 1000
-RP.nbrOfWalkersPerWorkGroup = 4
+ka.= RunParams()
+ka.nbrOfWalkers = 64
+ka.N = 1024 * 64
+ka.getOperator = True
+ka.enablePathShift = False
+ka.enableBisection = True
+ka.enableSingleNodeMove = False
+ka.enableGlobalPath = True
+ka.enableGlobalOldPath = True
+ka.enableParallelizePath = True
+ka.returnBinCounts = False
+ka.beta = 1000
+ka.nbrOfWalkersPerWorkGroup = 4
 
 
 # Time to run simul
@@ -54,7 +54,7 @@ endTime = 60 * 60 * 24 * 14
 # How often to save paths.
 savePathsInterval = 3000
 systemClass = Lm2m2_3part()
-RP.operators = (systemClass.energyOp, systemClass.meanSquaredRadiusOp
+ka.operators = (systemClass.energyOp, systemClass.meanSquaredRadiusOp
               , systemClass.meanRadiusOp)
 
 
@@ -65,10 +65,10 @@ def mStepsPerOPRun(N, S):
     return 10
 
 def runsPerN(N, S):
-    return max(RP.N / 8, 10)
+    return max(N / 8, 10)
 
-startXList=np.random.uniform(size=(RP.nbrOfWalkers,systemClass.DOF),low=-1.0,high=1.0)*0.01
+startXList=np.random.uniform(size=(ka.nbrOfWalkers,systemClass.DOF),low=-1.0,high=1.0)*0.01
 
 # Run the simulation function
-modN(RP, startXList, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
+modN(ka, startXList, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
      , mStepsPerOPRun, 8, runsPerN, 512)

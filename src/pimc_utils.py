@@ -7,12 +7,11 @@
 #
 # FeynSimul is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PUka.SE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
-
 
 import os
 from datetime import datetime
@@ -22,11 +21,11 @@ import sys
 import csv
 import numpy as np
 
-from host import *
+from kernel import *
 
-def modN(RP, startXList, savePathsInterval, systemClass, endTime
+def modN(ka, startXList, savePathsInterval, runLength=-1
         , experimentName, opRunsFormula, mStepsPerOPRun
-        ,startN, runsPerN, maxWGSize, continueRun=False):
+        , finalN=-1, runsPerN, maxWGSize, continueRun=False):
 
     startClock = time()
     pathChanges = 0
@@ -37,121 +36,95 @@ def modN(RP, startXList, savePathsInterval, systemClass, endTime
     if not os.path.exists("results/" + experimentName + "/" + timestamp):
         os.makedirs("results/" + experimentName + "/" + timestamp)
 
-    endN = RP.N
-    RP.S = 1
-
     if continueRun:
-        startN = continueRun[1]
-        RP.S = continueRun[2]
+        ka.N = continueRun[1]
+        ka.S = continueRun[2]
+    else:
+        ka.S = 1
+    
+    firstNRun = True
 
-    # RP.N = startN, 2*startN, .... , endN
-    for RP.N in [2 ** i for i in range(int(np.log2(startN) + 0.5)
-                 , int(np.log2(endN) + 1.0))]:
+    while finalN==-1 or ka.N <= finalN:
+        ka.operatorRuns = opRunsFormula(ka.N, ka.S)
+        ka.metroStepsPerOperatorRun = mStepsPerOPRun(ka.N, ka.S)
 
-        # Make sure S is large enough to not use too many walkers in a WG
-        while RP.nbrOfWalkersPerWorkGroup * RP.N / (2 ** RP.S) > maxWGSize:
-            RP.S += 1
-
-
-        RP.operatorRuns = opRunsFormula(RP.N, RP.S)
-        RP.metroStepsPerOperatorRun = mStepsPerOPRun(RP.N, RP.S)
-        RP.returnOperator = True
-
-        KE = loadKernel(systemClass, RP)
+        kernel=Kernel(ka)
 
         # If not first run create a new path by interpolating
-        if not RP.N == startN:
-            newPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
-            for walker in range(RP.nbrOfWalkers):
-                for DOF in range(systemClass.DOF):
-                    secondIndices = DOF * RP.N + np.array(range(0, RP.N, 2))
-                    # Nodes from the old path is copied to every second node in
-                    # new path.
-                    newPaths[walker, secondIndices] = RKR.paths[walker
-                            , secondIndices / 2]
-
-
-                    # Linear interpolation to create new nodes in between nodes
-                    # from old path.
-
-                    # Fix periodic boundary conditions
-                    rightIndex = secondIndices + 2
-                    rightIndex[-1] -= RP.N
-                    newPaths[walker, secondIndices + 1] = (newPaths[walker,
-                        secondIndices] + newPaths[walker, rightIndex]) / 2.0
-
-                    KE.paths.data.release()
-                    KE.paths = cl.array.to_device(KE.queue,
-                                                  newPaths.astype(np.float32))
-
-        # If first run
-        else:
+        if firstNRun:
             if not continueRun:
-                initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
-                for i in range(RP.nbrOfWalkers):
+                initialPaths = np.zeros((ka.nbrOfWalkers, ka.N * systemClass.DOF))
+                for i in range(ka.nbrOfWalkers):
                     for j in range(systemClass.DOF):
-                        initialPaths[i][j*RP.N:(j+1)*RP.N] = (np.ones(RP.N) *
+                        initialPaths[i][j*ka.N:(j+1)*ka.N] = (np.ones(ka.N) *
                             startXList[i][j])
             else:
-                initialPaths = np.zeros((RP.nbrOfWalkers, RP.N * systemClass.DOF))
+                initialPaths = np.zeros((ka.nbrOfWalkers, ka.N * systemClass.DOF))
                 reader = csv.reader(open(continueRun[0]), delimiter='\t')
                 k = 0
                 for row in reader:
                     initialPaths[k] = map(float,row)
                     k += 1
-
-            KE.paths = cl.array.to_device(KE.queue, initialPaths.astype(np.float32))
+            kernel.setPaths(initialPaths)
+        else:
+            newPaths = np.zeros((ka.nbrOfWalkers, ka.N * systemClass.DOF))
+            for walker in range(ka.nbrOfWalkers):
+                for DOF in range(systemClass.DOF):
+                    secondIndices = DOF * ka.N + np.array(range(0, ka.N, 2))
+                    # Nodes from the old path is copied to every second node in
+                    # new path.
+                    newPaths[walker, secondIndices] = oldPaths[walker
+                            , secondIndices / 2]
+                    # Linear interpolation to create new nodes in between nodes
+                    # from old path.
+                    # Fix periodic boundary conditions
+                    rightIndex = secondIndices + 2
+                    rightIndex[-1] -= ka.N
+                    newPaths[walker, secondIndices + 1] = (newPaths[walker,
+                        secondIndices] + newPaths[walker, rightIndex]) / 2.0
+            # KE.paths.data.release()
+            kernel.setPaths(newPaths)
 
         nRuns = 1
-        runsThisN = runsPerN(RP.N, RP.S)
-        while (nRuns <= runsThisN or RP.N == endN):
-            if time() - startClock > endTime:
+        runsThisN = runsPerN(ka.N, ka.S)
+        while nRuns <= runsThisN or ka.N == finalN:
+            if runTime != -1 and time() - startClock > runTime:
                 return
 
             # Save paths
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
-                print("Saving paths...")
-
-                KE.runParams.returnPaths = True
-                RKR = runKernel(KE)
-                nRuns += 1
-                KE.runParams.returnPaths = False
-                pathChanges += RP.getMetroStepsPerRun()
-                output(filename, RP.N, time() - startClock, pathChanges
-                        , RKR.acceptanceRate, RKR.operatorMean
-                        , RP.beta, RP.S)
-                f = open("results/" + experimentName + "/" + timestamp +
-                         "/pathsN" + str(RP.N) + "episode" +
-                         str(int(nRuns / savePathsInterval)), 'wb')
-                csvWriter = csv.writer(f, delimiter='\t')
-                for aPath in RKR.paths:
-                    csvWriter.writerow(aPath)
-                f.close()
+                with open("results/" + experimentName + "/" + timestamp +
+                         "/pathsN" + str(ka.N) + "episode" +
+                         str(int(nRuns / savePathsInterval)), 'wb') as f:
+                    csvWriter = csv.writer(f, delimiter='\t')
+                    for aPath in kernel.getPaths():
+                        csvWriter.writerow(aPath)
                 print("Paths saved!")
 
-            RKR = runKernel(KE)
+            kernel.run()
             nRuns += 1
-            pathChanges += RP.getMetroStepsPerRun()
-            output(filename, RP.N, time()-startClock, pathChanges
-                   , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
+            pathChanges += kernel.getMetroStepsPerRun()
+            output(filename, ka.N, time()-startClock, pathChanges
+                   , kernel.getAcceptanceRate(), kernel.getOperators
+                   , ka.beta, ka.S)
 
-        # Last run for this N so need to save paths
-        if RP.N != endN:
-            KE.runParams.returnPaths = True
-            RKR = runKernel(KE)
-            KE.runParams.returnPaths = False
-            pathChanges += RP.getMetroStepsPerRun()
-            output(filename, RP.N, time()-startClock, pathChanges
-                   , RKR.acceptanceRate, RKR.operatorMean, RP.beta, RP.S)
-
-        # Change S to move acceptance rate in the right direction
-        if RKR.acceptanceRate > 0.5:
-            RP.S = min(i - 1, RP.S + 2)
-        if 0.2 < RKR.acceptanceRate < 0.5:
-            RP.S = min(i - 1, RP.S + 1)
-        if RKR.acceptanceRate < 0.1:
-            RP.S = max(1, RP.S - 1)
-
+        #do preparations for next run that are not to be done first run
+        if ka.N != finalN:
+            oldPaths = kernel.getPaths()
+            firstNRun = False
+            # Change S to move acceptance rate in the right direction, some magic
+            # numbers here.
+            ar=kernel.getAcceptanceRate()
+            if ar > 0.5:
+                ka.S = min(i - 1, ka.S + 2)
+            if 0.2 < ar < 0.5:
+                ka.S = min(i - 1, ka.S + 1)
+            if ar < 0.1:
+                ka.S = max(1, ka.S - 1)
+             # Make sure S is large enough to not use too many walkers in a WG
+            while ka.nbrOfWalkersPerWorkGroup * ka.N / (2 ** ka.S) > maxWGSize:
+                ka.S += 1
+            ka.N *= 2
 
 def output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S):
@@ -160,24 +133,22 @@ def output(filename, N, t, pathChanges, acceptanceRate
           str(beta)+"\tAR: " + str(acceptanceRate) + "\tOP:s " +
           str(np.mean(operatorMean, axis = 1)))
 
-    f_data = open(filename + ".tsv", 'a')
+    with open(filename + ".tsv", 'a') as f_data:
+        # Add a heading describing the columns if file is empty.
+        if  os.path.getsize(filename + ".tsv") == 0:
+            f_data.write("#Beta: " + str(beta) + "\n")
+            f_data.write("#N\tTime\tpathChanges\tAR\tS")
+            for i in range(len(operatorMean)):
+                for j in range(len(operatorMean[0])):
+                 f_data.write("\tOperator " + str(i) + ", Thread " + str(j) )
+            f_data.write("\n")
 
-    # Add a heading describing the columns if file is empty.
-    if  os.path.getsize(filename + ".tsv") == 0:
-        f_data.write("#Beta: " + str(beta) + "\n")
-        f_data.write("#N\tTime\tpathChanges\tAR\tS")
-        for i in range(len(operatorMean)):
-            for j in range(len(operatorMean[0])):
-             f_data.write("\tOperator " + str(i) + ", Thread " + str(j) )
+        f_data.write(str(N)+"\t")
+        f_data.write(str(t)+"\t")
+        f_data.write(str(pathChanges)+"\t")
+        f_data.write(str(acceptanceRate)+"\t")
+        f_data.write(str(S)+"\t")
+        for walkerOperators in operatorMean:
+            for op in walkerOperators:
+                f_data.write(str(op)+"\t")
         f_data.write("\n")
-
-    f_data.write(str(N)+"\t")
-    f_data.write(str(t)+"\t")
-    f_data.write(str(pathChanges)+"\t")
-    f_data.write(str(acceptanceRate)+"\t")
-    f_data.write(str(S)+"\t")
-    for walkerOperators in operatorMean:
-        for op in walkerOperators:
-            f_data.write(str(op)+"\t")
-    f_data.write("\n")
-    f_data.close()

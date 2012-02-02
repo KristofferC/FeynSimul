@@ -370,7 +370,10 @@ class PIMCKernel:
 
     def getPaths(self):
         return self._paths.get()
-        
+    
+    def setPaths(self, paths):
+        self._paths = cl.array.to_device(self._queue,paths.astype(np.float32))
+
     def getOperators(self):
         if not self._enableOperator:
                 raise Exception("Can only return operator when "
