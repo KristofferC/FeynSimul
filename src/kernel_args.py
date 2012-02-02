@@ -14,12 +14,9 @@
 # along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
 
 
-"""
-This module defines a single class, C{KernelArgs} which is used to keep track
-of parameters needed to create a Kernel.
-"""
-__docformat__ = 'epytext en'
-
-
 class KernelArgs:
+    """
+    This module defines a single class, C{KernelArgs} which is used to keep track
+    of parameters needed to create a Kernel.
+    """
     pass

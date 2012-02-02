@@ -29,11 +29,10 @@ def humanReadableSize(size):
     """
     Converts a size in bytes to human readable form.
 
-    @type size: Number
-    @param size: Size in bytes
+    :param number size: Size in bytes to convert
 
-    @rtype: string
-    @return: The size in human readable form.
+    :rtype: string
+    :returns: The size in human readable form.
     """
     if size <= 0 or size >= 10e18:
         return "%.3g" % size + " B"
@@ -44,7 +43,8 @@ def humanReadableSize(size):
 
 
 class PIMCKernel:
-    def __init__(self,ka):
+    "klass klass"
+    def __init__(self, ka):
         """
         Loads the kernel to the GPU and readies it to be run.
 
@@ -52,10 +52,11 @@ class PIMCKernel:
         defines and dictionary replacements. The binary program that will be
         sent to the GPU is built and memory allocations on the GPU are done.
 
-        @type ka: L{kernelArgs} class
-        @param self._system: An instance of kernelArgs describing what kind of 
-        kernel to build.
+        :type ka: :py:class:`kernelArgs` class
+        :param ka: An instance of kernelArgs describing what kind of 
+                   kernel to build.
         """
+
         self._enableBins = ka.enableBins
         self._enableOperator = ka.enableOperator
         self._enableCorrelator = ka.enableCorrelator
@@ -319,15 +320,8 @@ class PIMCKernel:
 
     def run(self):
         """
-        Runs the kernel with the self._system and the run parameters.
-
-        This will start the kernel on the GPU. When the GPU is done desired
-        data is fetched.
-
-        @type pimcKernel: L{pimc_kernel.PIMCKernel}
-        @param pimcKernel: The class that is returned from L{loadKernel}.
-        @rtype: L{RunKernelResults}
-        @return: Contains the results of running the kernel.
+        Runs the kernel with the self._system and the run parameters on the
+        OpenCL device.
         """
         #Run kernel. The buffers for all pyopencl.array objects are passed
         #by the .data parameter.
@@ -369,12 +363,33 @@ class PIMCKernel:
                 raise
 
     def getPaths(self):
+        """
+        Fetches and returns the paths from the OpenCL device.
+
+        :returns: The paths
+        :rtype: ndarray with dimension (number of walkers * N * degrees of
+                freedom)
+        """
         return self._paths.get()
     
     def setPaths(self, paths):
+        """
+        Sets the paths on the OpenCL device.
+
+        :param paths: The paths to be set in the device.
+        :type paths: numpy array
+        """
         self._paths = cl.array.to_device(self._queue,paths.astype(np.float32))
 
     def getOperators(self):
+        """
+        Fetches the calculated operator values from the OpenCL device and
+        returns it.
+
+        :returns: The mean of the operator values for each operator and walker.
+        :rtype: ndarray with dimension (number of operators) x (number of
+                walkers)
+        """
         if not self._enableOperator:
                 raise Exception("Can only return operator when created with"
                                 "kernelArg.enableOperator = True")
@@ -410,6 +425,9 @@ class PIMCKernel:
         return (correlatorMean, correlatorStandardError)
 
     def getBinCounts(self):
+        """
+
+        """
         if not self._enableBins:
             raise Exception("Can only return bins when "
                             "kernalArg.enableBins = True")
@@ -423,10 +441,24 @@ class PIMCKernel:
         return (self._binCounts.get().astype(np.float32)
                               / (binVol * totBinCount))
     def getRunTime(self):
+        """
+        Returns the run time for the kernel to execute.
+
+        ;returns: Time for kernel to run.
+        ;rtype: float
+        """
         return 1e-9 * (self._kernelObj.profile.end - 
-        self._kernelObj.profile.start)
+                         self._kernelObj.profile.start)
 
     def getAcceptanceRate(self):
+        """
+        Fetches the average acceptance rate in the Metropolis step among all
+        the threads.
+
+        :returns: Average acceptance rate.
+        :rtype: float
+        """
+
         return (self._accepts.get() / float(self._operatorRuns
         * self._metroStepsPerOperatorRun)).mean()
 
@@ -499,8 +531,8 @@ class PIMCKernel:
         of limits. Global memory usage is just estimated based on RunParameters
         and might thus not be completely accurate.
 
-        @rtype:   bool
-        @return:  True if limits are exceeded
+        :rtype:   bool
+        :returns:  True if limits are exceeded
         """
         devices = self._prg.get_info(cl.program_info.DEVICES)
         if len(devices) != 1:
@@ -546,9 +578,9 @@ class PIMCKernel:
 
     def getMetroStepsPerRun(self):
         """
-        @rtype: int
-        @return: The total amount of metropolis steps that
-        will be done in a kernel run
+        :rtype: int
+        :return: The total number of metropolis steps that
+                 will be done in a kernel run
         """
         if self._enableParallelizePath:
             nbrOfThreadsPerWalker = self._N / (2 ** self._S)
