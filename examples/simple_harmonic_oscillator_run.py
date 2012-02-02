@@ -52,7 +52,6 @@ ka.enableGlobalOldPath = False
 ka.enableBins = True
 ka.xMin = -4.0
 ka.xMax = 4.0
-ka.enableBins = True
 ka.binResolutionPerDOF = 60
 ka.nbrOfWalkersPerWorkGroup = 4
 plotWaveFunction = False

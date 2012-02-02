@@ -428,7 +428,24 @@ class PIMCKernel:
 
     def getAcceptanceRate(self):
         return (self._accepts.get() / float(self._operatorRuns
-        * self._metrostepsPerOperatorRun)).mean()
+        * self._metroStepsPerOperatorRun)).mean()
+
+    def getGlobalMemory(self):
+        usedGlobalMemory = 0
+        usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
+        usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
+        usedGlobalMemory += (self._nbrOfWalkers * self._N *
+                             self._self._system.DOF * 4)  # path
+        usedGlobalMemory += (self._nbrOfThreads
+                            * self._nbrOfOperators * 4)  # operator
+        if self._enableGlobalOldPath:
+            usedGlobalMemory += (self._nbrOfThreads *
+                                (2 ** self._S - 1)
+                                 * self._self._system.DOF * 4)
+        if self._enableBins:
+            usedGlobalMemory += (self._binsPerPart **
+                                self._self._system.DOF * 4)
+        return usedGlobalMemory
 
     def getStats(self):
         """
@@ -446,23 +463,8 @@ class PIMCKernel:
             raise Exception("Expected the number of " +
                             "devices to be 1, it was " + str(len(devices)))
         dev = devices[0]
-        usedGlobalMemory = 0
-        usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
-        usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
-        usedGlobalMemory += (self._nbrOfWalkers * self._N *
-                             self._self._system.DOF * 4)  # path
-        usedGlobalMemory += (self._nbrOfThreads
-                            * self._nbrOfOperators * 4)  # operator
-        if self._enableGlobalOldPath:
-            usedGlobalMemory += (self._nbrOfThreads *
-                                (2 ** self._S - 1)
-                                 * self._self._system.DOF * 4)
-        if self._enableBins:
-            usedGlobalMemory += (self._binsPerPart **
-                                self._self._system.DOF * 4)
-
         ret += ("Global memory (used/max): " +
-                humanReadableSize(usedGlobalMemory) + " / " +
+                humanReadableSize(self.getGlobalMemory()) + " / " +
                 humanReadableSize(dev.get_info(cl.device_info.GLOBAL_MEM_SIZE))
                 + "\n")
 
@@ -505,24 +507,8 @@ class PIMCKernel:
             raise Exception("Expected the number of devices to be 1, it was "
                             + str(len(devices)))
         dev = devices[0]
-        usedGlobalMemory = 0
-        usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
-        usedGlobalMemory += self._nbrOfThreads * 4  # accepts
-        usedGlobalMemory += (self._nbrOfWalkers *
-                            self._N * self._self._system.DOF * 4)  # path
-        usedGlobalMemory += (self._nbrOfThreads
-                            * self._nbrOfOperators * 4)  # operator
 
-        if self._enableGlobalOldPath:
-            usedGlobalMemory += (self._nbrOfThreads *
-                                 (2 ** self._S - 1)
-                                 * self._self._system.DOF * 4)
-
-        if self._enableBins:
-            usedGlobalMemory += (self._binsPerPart
-                                ** self._self._system.DOF * 4)
-
-        if(usedGlobalMemory > dev.get_info(cl.device_info.GLOBAL_MEM_SIZE)):
+        if(self.getGlobalMemory() > dev.get_info(cl.device_info.GLOBAL_MEM_SIZE)):
             return True
 
         if(self._kernel.get_work_group_info(
@@ -545,15 +531,31 @@ class PIMCKernel:
             if (self._localSize[i] >
                 dev.get_info(cl.device_info.MAX_WORK_ITEM_SIZES)[i]):
                 return True
-
+        
         return False
 
-        #awaiting new version of pyopencl
-'''def getBuildLog(self):
+    #awaiting new version of pyopencl
+    '''def getBuildLog(self):
 
-        devices=self._prg.get_info(cl.program_info.DEVICES)
-        if len(devices)!=1:
-            raise Exception("Expected the number of devices to be 1, it was "
-+str(len(devices)))
-        return self._prg.get_build_info(devices[0],
-cl.program_build_info.LOG)'''
+            devices=self._prg.get_info(cl.program_info.DEVICES)
+            if len(devices)!=1:
+                raise Exception("Expected the number of devices to be 1, it was "
+    +str(len(devices)))
+            return self._prg.get_build_info(devices[0],
+    cl.program_build_info.LOG)'''
+
+    def getMetroStepsPerRun(self):
+        """
+        @rtype: int
+        @return: The total amount of metropolis steps that
+        will be done in a kernel run
+        """
+        if self._enableParallelizePath:
+            nbrOfThreadsPerWalker = self._N / (2 ** self._S)
+            return (self._nbrOfWalkers * nbrOfThreadsPerWalker 
+                    * self._metroStepsPerOperatorRun
+                    * self._operatorRuns * self._enableBisection)
+        else:
+            return (self._nbrOfWalkers * self._metroStepsPerOperatorRun * self._operatorRuns 
+                    * (self._enableBisection + self._enablePathShift 
+                        + self._enableSingleNodeMove))
