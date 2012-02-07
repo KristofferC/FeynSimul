@@ -14,7 +14,7 @@
 import sys, os, inspect
 
 currPath = os.path.dirname(inspect.getfile(inspect.currentframe())) 
-sys.path.append(currPath + "/../src/")
+sys.path.append(currPath + "/../FeynSimul/")
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

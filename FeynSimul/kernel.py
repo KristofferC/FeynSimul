@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import numpy as np
 from time import time
 from collections import defaultdict
@@ -52,7 +51,7 @@ class PIMCKernel:
         defines and dictionary replacements. The binary program that will be
         sent to the GPU is built and memory allocations on the GPU are done.
 
-        :type ka: :py:class:`kernelArgs` class
+        :type ka: :class:`kernel_args.kernelArgs` class
         :param ka: An instance of kernelArgs describing what kind of 
                    kernel to build.
         """
@@ -475,7 +474,7 @@ class PIMCKernel:
                                 (2 ** self._S - 1)
                                  * self._system.DOF * 4)
         if self._enableBins:
-            usedGlobalMemory += (self._binsPerPart **
+            usedGlobalMemory += (self._binResolutionPerDOF **
                                 self._system.DOF * 4)
         return usedGlobalMemory
 

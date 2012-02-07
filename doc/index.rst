@@ -8,7 +8,7 @@ Welcome to FeynSimul's documentation!
 
 
 
-The :py:mod:`FeynSimyl` module provides blah blah blah.
+The :py:mod:`FeynSimul` module provides blah blah blah.
 
 .. math:: \frac{1}{\pi^2}
     :label: matte
