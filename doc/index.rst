@@ -6,6 +6,8 @@
 Welcome to FeynSimul's documentation!
 =====================================
 
+
+
 The :py:mod:`FeynSimyl` module provides blah blah blah.
 
 .. math:: \frac{1}{\pi^2}
@@ -19,7 +21,11 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   api
+   About <about.rst>
+   Tutorial <tutorial/index.rst>
+   Guide <guide/index.rst>
+   Library <library/index.rst>
+
 
 
 
@@ -29,4 +35,12 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Meta information
+================
+
+.. toctree::
+   :maxdepth: 1
+
+   Licencing <licencing.rst>
 
