@@ -183,7 +183,7 @@ class PIMCKernel:
             correlatorCode = ""
             nbrOfCorrelatorsOnes = ""
             for i in range(0, len(self._correlators)):
-                correlatorCode += ("cokarod[" + str(i) + "] *= "
+                correlatorCode += ("corProd[" + str(i) + "] *= "
                                    + self._correlators[i] + ";\n")
                 if i != 0:
                     nbrOfCorrelatorsOnes += ","
@@ -419,7 +419,7 @@ class PIMCKernel:
                             "kernalArg.enableCorrelator = True")
         correlatorValues = self._correlatorValues.get()
         correlatorMean = (correlatorValues.mean(axis = 0) /
-                       float(operatorRuns * N))
+                       float(self._operatorRuns * self._N))
         correlatorStandardError = (correlatorValues.std(axis = 0) /
                         np.sqrt(self._nbrOfWalkers))
         return (correlatorMean, correlatorStandardError)
