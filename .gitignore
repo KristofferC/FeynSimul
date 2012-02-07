@@ -3,6 +3,7 @@
 *.swp
 *.swx
 *.swo
+*.swn
 
 # Compiled python files
 *.pyc
