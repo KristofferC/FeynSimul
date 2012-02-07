@@ -2,10 +2,19 @@ Tutorial
 ========
 
 Import FeynSimul and a physical system
-----------------
+--------------------------------------
 
-    >>> from FeynSimul import *
-    >>> from FeynSimul.physical_system import harm_osc
+
+Test
+----
+    >>> 1+1
+    2
+    3
+    >>> 5+5
+
+Importar numpy lol
+
+
 
 
 
