@@ -364,15 +364,15 @@ histogram (PATH_TYPE_KEYWORD float *local_path, __global uint *binCounts)
 
     for (int p = 0; p < %(DOF)s; p++)
     {
-        if (local_path[%(N)s * p] < %(xmin)s ||
-                local_path[%(N)s * p] >= %(xmax)s)
+        if (local_path[%(N)s * p] < %(xMin)s ||
+                local_path[%(N)s * p] >= %(xMax)s)
         {
             ok = 0;
             break;
         }
 
         binIndex +=
-            (uint) ((local_path[%(N)s * p] - (%(xmin)s)) *
+            (uint) ((local_path[%(N)s * p] - (%(xMin)s)) *
                     %(invBinSize)s)*inc;
         inc *= %(binsPerPart)s;
     }
@@ -600,7 +600,7 @@ metropolis (__global float *paths
                 {
 		    corT-=%(N)s/2;
                 }
-            }
+            
 #else
 	    for(uint corT=0;corT < %(N)s / 2; corT++)
             {

@@ -18,66 +18,78 @@
 # mean of the energy operator is printed. The bisection method with threads
 # working in parallel is used. No thermalization is being done.
 
-import os
 import sys
-import numpy as np
 
+import numpy as np
 import pylab as pl
 
 sys.path.append(sys.path[0] + "/../src/")
-from run_params import *
-from host import *
+from kernel_args import *
+from kernel import *
 
 # Import the harmonic oscillator class
 sys.path.append(sys.path[0] + "/../src/physical_systems/")
 from harm_osc import *
 
-# Create the physical system
-HO_syst = HarmOsc()
-
 # Set the run parameters
-HO_runparams = RunParams()
-HO_runparams.nbrOfWalkers = 448*2
-HO_runparams.N = 256
-HO_runparams.S = 6
-HO_runparams.beta = 11
-HO_runparams.operatorRuns = 100
-HO_runparams.returnOperator = True
-HO_runparams.metroStepsPerOperatorRun = 40
-HO_runparams.enableBisection = True
-HO_runparams.enableParallelizePath = True
-HO_runparams.binsEnabled = True
-HO_runparams.returnBinCounts = True
-HO_runparams.xmin = -4.0
-HO_runparams.xmax = 4.0
-HO_runparams.enableBins = True
-HO_runparams.binResolutionPerDOF = 60
-HO_runparams.nbrOfWalkersPerWorkGroup = 4
-plotWaveFunction = False
+ka = KernelArgs()
+ka.system = HarmOsc()
+ka.nbrOfWalkers = 448 * 2
+ka.N = 128
+ka.S = 6
+ka.beta = 11.0
+ka.operatorRuns = 150
+ka.enableOperator = True
+ka.enableCorrelator = False
+ka.metroStepsPerOperatorRun = 40
+ka.enableBisection = True
+ka.enablePathShift = False
+ka.enableSingleNodeMove = False
+ka.enableParallelizePath = True
+ka.enableGlobalPath = False
+ka.enableGlobalOldPath = False
+ka.enableBins = True
+ka.xMin = -3.5
+ka.xMax = 3.5
+ka.binResolutionPerDOF = 80
+ka.nbrOfWalkersPerWorkGroup = 4
+plotWaveFunction = True
 
 # Set the operator
-HO_runparams.operators  = (HO_syst.energyOp,)
+ka.operators = (ka.system.energyOp,)
+ka.correlators = ("x1",)
 
 # Load kernel
-HO_kernelEnvironment = loadKernel(HO_syst, HO_runparams)
+kernel = PIMCKernel(ka)
 
 # Run kernel
-HO_kernelResults = runKernel(HO_kernelEnvironment)
+kernel.run()
 
 # Print the results
-print "Mean: " + str(np.mean(HO_kernelResults.operatorMean))
-#print "Standard error: " + str(HO_kernelResults.operatorStandardError)
-#print "Acceptance rate: " + str(HO_kernelResults.acceptanceRate)
-#print "Time for GPU to finish calculations: " + str(HO_kernelResults.runTime)
+print "Ground state at: " + str(np.mean(kernel.getOperators()))
 
 #Plot resulting wavefunction
-
-if plotWaveFunction and RP.binsEnabled:
+if plotWaveFunction and ka.enableBins:
   
-# x interval for plot, + 0.5 * binSize to have each value in the middle of bins
-    binSize = (HO_runparams.xmax - HO_runparams.xmin) / HO_runparams.binResolutionPerDOF
-    x = np.linspace(HO_runparams.xmin, HO_runparams.xmax - binSize,
-                HO_runparams.binResolutionPerDOF) + 0.5 * binSize
-    pl.plot(x, HO_kernelResults.binCountNormed,'*')
+    binSize = (ka.xMax - ka.xMin) / ka.binResolutionPerDOF
+    
+    # x interval for plot, + 0.5 * binSize to have each value in the middle of bins
+    x = np.linspace(ka.xMin, ka.xMax - binSize,
+                ka.binResolutionPerDOF) + 0.5 * binSize
+    pl.plot(x,kernel.getBinCounts(),'*', label="Simulated")
+    
+    # Analytical
+    pl.plot(x, 1/np.sqrt(np.pi) * np.exp(-x ** 2), label="Analytical")
+    pl.legend(loc='best')
+    pl.xlabel("x")
+    pl.title("$| \psi_0(x)|^2$ for Simple Harmonic Oscillator")
     pl.show()
 
+
+
+#corrs = kernel.getCorrelator()[0]
+#logDerCorr = -np.gradient(np.log(corrs[0]), ka.beta / ka.N)
+#print logDerCorr[0]
+#print corrs
+#pl.plot(logDerCorr, '*')
+#pl.show()

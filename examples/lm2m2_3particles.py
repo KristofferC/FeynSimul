@@ -26,36 +26,35 @@ from time import sleep
 import csv
 
 sys.path.append(sys.path[0] + "/../src/")
-from run_params import *
-from host import *
 from pimc_utils import *
 
 sys.path.append(sys.path[0] + "/../src/physical_systems/")
 from lm2m2_3part import *
 
-RP = RunParams()
-RP.nbrOfWalkers = 64
-RP.N = 1024 * 64
-RP.getOperator = True
-RP.enablePathShift = False
-RP.enableBisection = True
-RP.enableSingleNodeMove = False
-RP.enableGlobalPath = True
-RP.enableGlobalOldPath = True
-RP.enableParallelizePath = True
-RP.returnBinCounts = False
-RP.beta = 1000
-RP.nbrOfWalkersPerWorkGroup = 4
-
-
+ka= KernelArgs()
+ka.nbrOfWalkers = 64
+ka.N = 8
+ka.enablePathShift = False
+ka.enableBisection = True
+ka.enableSingleNodeMove = False
+ka.enableGlobalPath = True
+ka.enableGlobalOldPath = True
+ka.enableParallelizePath = True
+ka.enableBins = False
+ka.beta = 1000
+ka.nbrOfWalkersPerWorkGroup = 4
+ka.operatorRuns = 100
+ka.enableOperator = True
+ka.enableCorrelator = False
+ka.metroStepsPerOperatorRun = 40
+ka.system = Lm2m2_3part()
 # Time to run simul
 endTime = 60 * 60 * 24 * 14
 
 # How often to save paths.
 savePathsInterval = 3000
-systemClass = Lm2m2_3part()
-RP.operators = (systemClass.energyOp, systemClass.meanSquaredRadiusOp
-              , systemClass.meanRadiusOp)
+ka.operators = (ka.system.energyOp, ka.system.meanSquaredRadiusOp
+              , ka.system.meanRadiusOp)
 
 
 def opRunsFormula(N, S):
@@ -65,10 +64,12 @@ def mStepsPerOPRun(N, S):
     return 10
 
 def runsPerN(N, S):
-    return max(RP.N / 8, 10)
+    return max(N / 8, 10)
 
-startXList=np.random.uniform(size=(RP.nbrOfWalkers,systemClass.DOF),low=-1.0,high=1.0)*0.01
+startXList=np.random.uniform(size=(ka.nbrOfWalkers,ka.system.DOF)
+        ,low=-1.0,high=1.0)*0.01
 
 # Run the simulation function
-modN(RP, startXList, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
-     , mStepsPerOPRun, 8, runsPerN, 512)
+modN(ka, startXList, savePathsInterval, "lm2m2_3part", opRunsFormula
+     , mStepsPerOPRun,  runsPerN, 512, runTime=endTime, finalN=1024*64,
+     verbose=True)
