@@ -18,10 +18,9 @@
 # mean of the energy operator is printed. The bisection method with threads
 # working in parallel is used. No thermalization is being done.
 
-import os
 import sys
-import numpy as np
 
+import numpy as np
 import pylab as pl
 
 sys.path.append(sys.path[0] + "/../src/")
@@ -35,11 +34,11 @@ from harm_osc import *
 # Set the run parameters
 ka = KernelArgs()
 ka.system = HarmOsc()
-ka.nbrOfWalkers = 448*2
-ka.N = 256
+ka.nbrOfWalkers = 448 * 2
+ka.N = 128
 ka.S = 6
-ka.beta = 11
-ka.operatorRuns = 300
+ka.beta = 11.0
+ka.operatorRuns = 150
 ka.enableOperator = True
 ka.enableCorrelator = False
 ka.metroStepsPerOperatorRun = 40
@@ -50,14 +49,15 @@ ka.enableParallelizePath = True
 ka.enableGlobalPath = False
 ka.enableGlobalOldPath = False
 ka.enableBins = True
-ka.xMin = -4.0
-ka.xMax = 4.0
-ka.binResolutionPerDOF = 60
+ka.xMin = -3.5
+ka.xMax = 3.5
+ka.binResolutionPerDOF = 80
 ka.nbrOfWalkersPerWorkGroup = 4
 plotWaveFunction = True
 
 # Set the operator
-ka.operators  = (ka.system.energyOp,)
+ka.operators = (ka.system.energyOp,)
+ka.correlators = ("x1",)
 
 # Load kernel
 kernel = PIMCKernel(ka)
@@ -66,20 +66,30 @@ kernel = PIMCKernel(ka)
 kernel.run()
 
 # Print the results
-print "Mean: " + str(np.mean(kernel.getOperators()))
-#print "Standard error: " + str(HO_kernelResults.operatorStandardError)
-#print "Acceptance rate: " + str(HO_kernelResults.acceptanceRate)
-#print "Time for GPU to finish calculations: " + str(HO_kernelResults.runTime)
+print "Ground state at: " + str(np.mean(kernel.getOperators()))
 
 #Plot resulting wavefunction
-
 if plotWaveFunction and ka.enableBins:
   
-# x interval for plot, + 0.5 * binSize to have each value in the middle of bins
     binSize = (ka.xMax - ka.xMin) / ka.binResolutionPerDOF
+    
+    # x interval for plot, + 0.5 * binSize to have each value in the middle of bins
     x = np.linspace(ka.xMin, ka.xMax - binSize,
                 ka.binResolutionPerDOF) + 0.5 * binSize
-    pl.plot(x,kernel.getBinCounts(),'*')
-    pl.plot(x, 1/np.sqrt(np.pi) * np.exp(-x ** 2))
+    pl.plot(x,kernel.getBinCounts(),'*', label="Simulated")
+    
+    # Analytical
+    pl.plot(x, 1/np.sqrt(np.pi) * np.exp(-x ** 2), label="Analytical")
+    pl.legend(loc='best')
+    pl.xlabel("x")
+    pl.title("$| \psi_0(x)|^2$ for Simple Harmonic Oscillator")
     pl.show()
 
+
+
+#corrs = kernel.getCorrelator()[0]
+#logDerCorr = -np.gradient(np.log(corrs[0]), ka.beta / ka.N)
+#print logDerCorr[0]
+#print corrs
+#pl.plot(logDerCorr, '*')
+#pl.show()
