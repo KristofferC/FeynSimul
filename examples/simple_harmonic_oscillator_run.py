@@ -39,7 +39,7 @@ ka.nbrOfWalkers = 448*2
 ka.N = 256
 ka.S = 6
 ka.beta = 11
-ka.operatorRuns = 100
+ka.operatorRuns = 300
 ka.enableOperator = True
 ka.enableCorrelator = False
 ka.metroStepsPerOperatorRun = 40
@@ -54,7 +54,7 @@ ka.xMin = -4.0
 ka.xMax = 4.0
 ka.binResolutionPerDOF = 60
 ka.nbrOfWalkersPerWorkGroup = 4
-plotWaveFunction = False
+plotWaveFunction = True
 
 # Set the operator
 ka.operators  = (ka.system.energyOp,)
@@ -73,12 +73,13 @@ print "Mean: " + str(np.mean(kernel.getOperators()))
 
 #Plot resulting wavefunction
 
-if plotWaveFunction and ka.binsEnabled:
+if plotWaveFunction and ka.enableBins:
   
 # x interval for plot, + 0.5 * binSize to have each value in the middle of bins
-    binSize = (ka.xmax - ka.xmin) / ka.binResolutionPerDOF
-    x = np.linspace(ka.xmin, ka.xmax - binSize,
+    binSize = (ka.xMax - ka.xMin) / ka.binResolutionPerDOF
+    x = np.linspace(ka.xMin, ka.xMax - binSize,
                 ka.binResolutionPerDOF) + 0.5 * binSize
-    pl.plot(x,kernel.getBins(),'*')
+    pl.plot(x,kernel.getBinCounts(),'*')
+    pl.plot(x, 1/np.sqrt(np.pi) * np.exp(-x ** 2))
     pl.show()
 
