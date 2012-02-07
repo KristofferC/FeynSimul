@@ -433,7 +433,7 @@ class PIMCKernel:
                             "kernalArg.enableBins = True")
         #Sum the bin counts from all individual threads.
         totBinCount = (self._nbrOfWalkers * self._operatorRuns
-                * N)
+                * self._N)
         binVol = ((float(self._xMax - self._xMin)
                  / float(self._binResolutionPerDOF)) **
                  self._system.DOF)
