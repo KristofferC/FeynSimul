@@ -25,11 +25,9 @@ from time import time
 from time import sleep
 import csv
 
-sys.path.append(sys.path[0] + "/../src/")
-from pimc_utils import *
+from FeynSimul.pimc_utils import *
 
-sys.path.append(sys.path[0] + "/../src/physical_systems/")
-from lm2m2_3part import *
+from FeynSimul.physical_systems.lm2m2_3part import *
 
 ka= KernelArgs()
 ka.nbrOfWalkers = 64

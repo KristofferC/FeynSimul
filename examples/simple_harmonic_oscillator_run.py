@@ -23,13 +23,11 @@ import sys
 import numpy as np
 import pylab as pl
 
-sys.path.append(sys.path[0] + "/../src/")
-from kernel_args import *
-from kernel import *
+from FeynSimul.kernel_args import *
+from FeynSimul.kernel import *
 
 # Import the harmonic oscillator class
-sys.path.append(sys.path[0] + "/../src/physical_systems/")
-from harm_osc import *
+from FeynSimul.physical_systems.harm_osc import *
 
 # Set the run parameters
 ka = KernelArgs()

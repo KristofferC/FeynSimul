@@ -15,7 +15,6 @@
 
 
 import matplotlib.pyplot as plt
-import csv
 import numpy as np
 
 def plotIt(systemClass, dataFile, burnRatio, nOperators):
@@ -38,8 +37,8 @@ def plotIt(systemClass, dataFile, burnRatio, nOperators):
     nRuns = len(generalData)
 
     N = data[:, 0].astype('int')
-    S = data[:, 4].astype('int')
-    AR = data[:, 3].astype('int')
+    #S = data[:, 4].astype('int')
+    #AR = data[:, 3].astype('int')
 
     # Format the opData in a 3 dimensional array where the first index is the
     # operator, second is the walker, and the third is the run
@@ -53,7 +52,6 @@ def plotIt(systemClass, dataFile, burnRatio, nOperators):
     operatorMeansPerRunPerN = []
     burntOperatorMeansPerRunPerN = []
     operatorMeansPerN = []
-    operatorMeansStdPerN = []
     runIndexPerN = []
     while n <= N[-1]:
         start = end
