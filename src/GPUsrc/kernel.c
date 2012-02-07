@@ -600,7 +600,7 @@ metropolis (__global float *paths
                 {
 		    corT-=%(N)s/2;
                 }
-            }
+            
 #else
 	    for(uint corT=0;corT < %(N)s / 2; corT++)
             {
