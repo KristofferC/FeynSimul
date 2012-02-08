@@ -27,10 +27,10 @@ Authors
 
 + Kristoffer Carlsson - kcarlsson89@gmail.com
 + Petter Säterskog - petter.saterskog@gmail.com
-+ Patric Holmvall - holmvall@student.chalmers.se
++ Patric Holmvall - patric.hol@gmail.com
 
 
-Licencing
+Licensing
 ----
 
 FeynSimul is free software.  See the file COPYING for copying conditions
