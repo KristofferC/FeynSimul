@@ -566,14 +566,14 @@ class PIMCKernel:
         return False
 
     #awaiting new version of pyopencl
-    '''def getBuildLog(self):
+    def getBuildLog(self):
 
-            devices=self._prg.get_info(cl.program_info.DEVICES)
-            if len(devices)!=1:
+            devices = self._prg.get_info(cl.program_info.DEVICES)
+            if len(devices) != 1:
                 raise Exception("Expected the number of devices to be 1, it was "
-    +str(len(devices)))
+                                    + str(len(devices)))
             return self._prg.get_build_info(devices[0],
-    cl.program_build_info.LOG)'''
+                            cl.program_build_info.LOG)
 
     def getMetroStepsPerRun(self):
         """

@@ -18,7 +18,6 @@
 # mean of the energy operator is printed. The bisection method with threads
 # working in parallel is used. No thermalization is being done.
 
-import sys
 
 import numpy as np
 import pylab as pl
@@ -38,7 +37,7 @@ ka.S = 6
 ka.beta = 11.0
 ka.operatorRuns = 150
 ka.enableOperator = True
-ka.enableCorrelator = False
+ka.enableCorrelator = True
 ka.metroStepsPerOperatorRun = 40
 ka.enableBisection = True
 ka.enablePathShift = False
@@ -46,11 +45,13 @@ ka.enableSingleNodeMove = False
 ka.enableParallelizePath = True
 ka.enableGlobalPath = False
 ka.enableGlobalOldPath = False
-ka.enableBins = True
+ka.enableBins = False
 ka.xMin = -3.5
 ka.xMax = 3.5
 ka.binResolutionPerDOF = 80
 ka.nbrOfWalkersPerWorkGroup = 4
+
+
 plotWaveFunction = True
 
 # Set the operator
@@ -66,6 +67,7 @@ kernel.run()
 # Print the results
 print "Ground state at: " + str(np.mean(kernel.getOperators()))
 
+
 #Plot resulting wavefunction
 if plotWaveFunction and ka.enableBins:
   
@@ -79,15 +81,13 @@ if plotWaveFunction and ka.enableBins:
     # Analytical
     pl.plot(x, 1/np.sqrt(np.pi) * np.exp(-x ** 2), label="Analytical")
     pl.legend(loc='best')
-    pl.xlabel("x")
-    pl.title("$| \psi_0(x)|^2$ for Simple Harmonic Oscillator")
+    #pl.xlabel("x")
+    #pl.title("$| \psi_0(x)|^2$ for Simple Harmonic Oscillator")
     pl.show()
 
 
 
-#corrs = kernel.getCorrelator()[0]
-#logDerCorr = -np.gradient(np.log(corrs[0]), ka.beta / ka.N)
-#print logDerCorr[0]
-#print corrs
-#pl.plot(logDerCorr, '*')
-#pl.show()
+corrs = kernel.getCorrelator()[0]
+logDerCorr = -np.gradient(np.log(corrs[0]), ka.beta / ka.N)
+pl.plot(logDerCorr, '*')
+pl.show()
