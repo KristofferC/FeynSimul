@@ -27,8 +27,15 @@ class Lm2m2_3part:
             self.groundStateEnergy=groundStates[n-3]
         self.xUnit= 1e-10 #Meter (xUnit is one Angstom)
         self.potentialUnit= 1.3806503e-23 #Joule (potentialUnit is one K)
-        self.energyOp = 
-        self.potential = 
+        self.potential = "0.0f"
+        self.energyOp = "0.0f"
+        for i in range(n):
+            for j in range(n):
+                if i<j:
+                    d=
+                    x=
+                    self.potential+="+lm2m2(sqrt("+d+"))"
+                    self.energyOp = "+lm2m2(sqrt("+d+"))+"x"*0.5f*dlm2m2dr(sqrt("+d+"))" 
         self.userCode = """
         inline float sqr(float x){return x*x;}                 
         //The following functions take r in Angstrom and return energy in K
