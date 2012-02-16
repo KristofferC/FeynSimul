@@ -52,7 +52,7 @@ class PIMCKernel:
         sent to the GPU is built and memory allocations on the GPU are done.
 
         :type ka: :class:`kernel_args.kernelArgs` class
-        :param ka: An instance of kernelArgs describing what kind of 
+        :param ka: An instance of kernelArgs describing what kind of
                    kernel to build.
         """
 
@@ -67,19 +67,19 @@ class PIMCKernel:
         self._enableGlobalOldPath = ka.enableGlobalOldPath
         self._nbrOfWalkers = ka.nbrOfWalkers
         self._nbrOfWalkersPerWorkGroup = ka.nbrOfWalkersPerWorkGroup
-        self._N = ka.N 
-        self._S = ka.S 
+        self._N = ka.N
+        self._S = ka.S
         self._beta = ka.beta
         self._operatorRuns = ka.operatorRuns
         self._metroStepsPerOperatorRun = ka.metroStepsPerOperatorRun
         self._system = copy.copy(ka.system)
-        
+
         if self._enableOperator:
             self._operators = ka.operators
 
         if self._enableCorrelator:
             self._correlators = ka.correlators
-        
+
         if self._enableBins:
             self._binResolutionPerDOF = ka.binResolutionPerDOF
             self._xMin = ka.xMin
@@ -213,7 +213,7 @@ class PIMCKernel:
             replacements['operatorCode'] = operatorCode
             replacements['nbrOfOperators'] = '%d' % len(self._operators)
             replacements['nbrOfOperatorsZeros'] = nbrOfOperatorsZeros
-            replacements['opNorm'] = '%ef' % (1.0 / float(self._operatorRuns 
+            replacements['opNorm'] = '%ef' % (1.0 / float(self._operatorRuns
             * self._N * self._nbrOfWalkers / self._nbrOfThreads))
 
         if self._enableCorrelator:
@@ -370,7 +370,7 @@ class PIMCKernel:
                 freedom)
         """
         return self._paths.get()
-    
+
     def setPaths(self, paths):
         """
         Sets the paths on the OpenCL device.
@@ -446,7 +446,7 @@ class PIMCKernel:
         ;returns: Time for kernel to run.
         ;rtype: float
         """
-        return 1e-9 * (self._kernelObj.profile.end - 
+        return 1e-9 * (self._kernelObj.profile.end -
                          self._kernelObj.profile.start)
 
     def getAcceptanceRate(self):
@@ -562,7 +562,7 @@ class PIMCKernel:
             if (self._localSize[i] >
                 dev.get_info(cl.device_info.MAX_WORK_ITEM_SIZES)[i]):
                 return True
-        
+
         return False
 
     #awaiting new version of pyopencl
@@ -583,10 +583,10 @@ class PIMCKernel:
         """
         if self._enableParallelizePath:
             nbrOfThreadsPerWalker = self._N / (2 ** self._S)
-            return (self._nbrOfWalkers * nbrOfThreadsPerWalker 
+            return (self._nbrOfWalkers * nbrOfThreadsPerWalker
                     * self._metroStepsPerOperatorRun
                     * self._operatorRuns * self._enableBisection)
         else:
-            return (self._nbrOfWalkers * self._metroStepsPerOperatorRun * self._operatorRuns 
-                    * (self._enableBisection + self._enablePathShift 
+            return (self._nbrOfWalkers * self._metroStepsPerOperatorRun * self._operatorRuns
+                    * (self._enableBisection + self._enablePathShift
                         + self._enableSingleNodeMove))
