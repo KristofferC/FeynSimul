@@ -1,28 +1,21 @@
 import sympy as sp
 
-def _jacobiMass(m):
-    sm=[sum(m[:i+1]) for i in range(len(m))]
-    jm=range(len(m))
-    for i in range(len(m)):
-        if i == 0:
-            jm[i] = m[0] * m[1] / (m[0] + m[1])
-        elif i == len(m) - 1:
-            jm[i] = sm[i]
-        else:
-            jm[i] = sm[i] * m[i + 1] / sm[i + 1]
-    return jm
-
 def jacobiCoord(x,m):
     jx=range(len(m))
+    _sum = lambda a: reduce(lambda b,c:b+c,a)
+    sm=[sum(m[:i+1]) for i in range(len(m))]
     for i in range(len(m)):
         if i == 0:
-            jx[i] = x[0] - x[1]
+            jm = m[0] * m[1] / (m[0] + m[1])
+            jx[i] = (x[0] - x[1]) * sp.sqrt(jm)
         elif i == len(m) - 1:
-            jx[i] = sum(map(lambda a, b: a*b, x, m)) / sum(m)
+            jm = sm[i]
+            jx[i] = _sum(map(lambda a, b: a*b, x, m)) / sm[-1] * sp.sqrt(jm)
         else:
-            jx[i] = (sum(map(lambda a, b: a*b, x[:i+1], m[:i+1]))
-                / sum(m[:i+1]) - x[i+1])
-    return map(lambda a, b: a * sp.sqrt(b), jx, _jacobiMass(m))
+            jm = sm[i] * m[i + 1] / sm[i + 1]
+            jx[i] = (_sum(map(lambda a, b: a*b, x[:i+1], m[:i+1]))
+                / _sum(m[:i+1]) - x[i+1]) * sp.sqrt(jm)
+    return jx
 
 def toJacobiCoord(expr,x,m):
     jx = sp.symbols(['jx' + str(i) for i in range(len(m))])
