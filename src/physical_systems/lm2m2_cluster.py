@@ -30,14 +30,15 @@ class Lm2m2_cluster:
             self.groundStateEnergy=groundStates[n-3]
         self.xUnit= 1e-10 #Meter (xUnit is one Angstom)
         self.potentialUnit= 1.3806503e-23 #Joule (potentialUnit is one K)
+        r=[sympy.symbols('r'+str(i)) for i in range(3*n)]
+        rm=[sympy.Matrix([r[i*3],r[i*3+1],r[i*3+2]]) for i in range(n)]
         x=[sympy.symbols('x'+str(i)) for i in range(3*n)]
         xm=[sympy.Matrix([x[i*3],x[i*3+1],x[i*3+2]]) for i in range(n)]
         m=[sympy.symbols('m')]*n
-        lm2m2=sympy.symbols('lm2m2')
-        sqrt=sympy.symbols('sqrt')
-        self.potential = partSys.getHyperRadialPotential(xm,lambda
-                    a,b:((a-b).transpose()*(a-b))[0],[lm2m2])
-        self.energyOp = sum([sympy.diff(self.potential,xi)*xi for xi in x])
+        lm2m2sqrt=sympy.symbols('lm2m2sqrt')
+        self.symPotential = jacobi.toJacobiCoord([partSys.getHyperRadialPotential(rm,lambda
+                    a,b:((a-b).transpose()*(a-b))[0],[lm2m2sqrt])],rm,m,xm)[0].simplify()
+        self.symEnergyOp = sum([sympy.diff(self.symPotential,xi)*xi/2 for xi in x])
         self.userCode = """
         inline float sqr(float x){return x*x;}                 
         //The following functions take r in Angstrom and return energy in K

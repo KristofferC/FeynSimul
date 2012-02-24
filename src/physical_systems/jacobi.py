@@ -3,7 +3,7 @@ import sympy as sp
 def jacobiCoord(x,m):
     jx=range(len(m))
     _sum = lambda a: reduce(lambda b,c:b+c,a)
-    sm=[sum(m[:i+1]) for i in range(len(m))]
+    sm=[_sum(m[:i+1]) for i in range(len(m))]
     for i in range(len(m)):
         if i == 0:
             jm = m[0] * m[1] / (m[0] + m[1])
@@ -17,9 +17,9 @@ def jacobiCoord(x,m):
                 / _sum(m[:i+1]) - x[i+1]) * sp.sqrt(jm)
     return jx
 
-def toJacobiCoord(expr,x,m):
-    jx = sp.symbols(['jx' + str(i) for i in range(len(m))])
-    rep = sp.solve(map(lambda a, b: a-b, jx, jacobiCoord(x,m)),x)
+def toJacobiCoord(expr,x,m,jx):
+    rep = sp.solve(sp.Matrix(map(lambda a, b: a-b, jx,
+        jacobiCoord(x,m))),[i for i in sp.Matrix(x)])
     return [e.subs(rep) for e in expr]
 '''
 n=15

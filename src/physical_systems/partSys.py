@@ -1,5 +1,3 @@
-import jacobi
-
 # x=particle positions, interactions is a list of two body interactions, three
 # body interactions, ... . All expressed in relevant squared hyperradii.
 def getHyperRadialPotential(x,distFun,interactions):
@@ -10,7 +8,7 @@ def getHyperRadialPotential(x,distFun,interactions):
         if len(part)==l:
             return interaction(hyperSqrRadius([x[p] for p in part]))
         return _sum(act(l,interaction,part+[j]) for j in
-            range(len(x)-l+len(part)+1) if part==[] or j>part[-1])
+            range(len(x)-l+len(part)+1) if part==[]or j>part[-1])
     return _sum(act(i+2,interactions[i]) for i in range(len(interactions)))
 
 ''':
