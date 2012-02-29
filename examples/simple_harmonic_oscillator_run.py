@@ -29,34 +29,31 @@ from FeynSimul.kernel import *
 from FeynSimul.physical_systems.harm_osc import *
 
 # Set the run parameters
-ka = KernelArgs()
-ka.system = HarmOsc()
-ka.nbrOfWalkers = 448 * 2
-ka.N = 128
-ka.S = 6
-ka.beta = 11.0
-ka.operatorRuns = 150
-ka.enableOperator = True
-ka.enableCorrelator = True
-ka.metroStepsPerOperatorRun = 40
-ka.enableBisection = True
-ka.enablePathShift = False
-ka.enableSingleNodeMove = False
-ka.enableParallelizePath = True
-ka.enableGlobalPath = False
-ka.enableGlobalOldPath = False
-ka.enableBins = False
-ka.xMin = -3.5
-ka.xMax = 3.5
-ka.binResolutionPerDOF = 80
-ka.nbrOfWalkersPerWorkGroup = 4
-
+system = HarmOsc
+ka = KernelArgs(system = system,
+                nbrOfWalkers = 448 * 2,
+                N = 128,
+                S = 6,
+                beta = 11.0,
+                operatorRuns = 150,
+                enableOperator = True,
+                enableCorrelator = True,
+                metroStepsPerOperatorRun = 40,
+                enableBisection = True,
+                enablePathShift = False,
+                enableSingleNodeMove = False,
+                enableParallelizePath = True,
+                enableGlobalPath = False,
+                enableGlobalOldPath = False,
+                enableBins = False,
+                xMin = -3.5,
+                xMax = 3.5,
+                binResolutionPerDOF = 80,
+                nbrOfWalkersPerWorkGroup = 4,
+                operators = system.energyOp,
+                correlators = ("x1",))
 
 plotWaveFunction = True
-
-# Set the operator
-ka.operators = (ka.system.energyOp,)
-ka.correlators = ("x1",)
 
 # Load kernel
 kernel = PIMCKernel(ka)
@@ -70,14 +67,14 @@ print "Ground state at: " + str(np.mean(kernel.getOperators()))
 
 #Plot resulting wavefunction
 if plotWaveFunction and ka.enableBins:
-  
+
     binSize = (ka.xMax - ka.xMin) / ka.binResolutionPerDOF
-    
+
     # x interval for plot, + 0.5 * binSize to have each value in the middle of bins
     x = np.linspace(ka.xMin, ka.xMax - binSize,
                 ka.binResolutionPerDOF) + 0.5 * binSize
     pl.plot(x,kernel.getBinCounts(),'*', label="Simulated")
-    
+
     # Analytical
     pl.plot(x, 1/np.sqrt(np.pi) * np.exp(-x ** 2), label="Analytical")
     pl.legend(loc='best')
