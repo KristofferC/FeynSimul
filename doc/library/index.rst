@@ -12,6 +12,7 @@ KernelArgs
 ----------
 .. automodule:: kernel_args
     :members:
+    :special-members:
 
 PimcUtils
 ---------
