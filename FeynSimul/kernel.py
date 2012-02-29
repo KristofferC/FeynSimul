@@ -41,6 +41,8 @@ def humanReadableSize(size):
         return "%.3g" % (size / 1024.0 ** p) + " " + names[p] + "B"
 
 
+
+
 class PIMCKernel:
     "klass klass"
     def __init__(self, ka):
@@ -75,12 +77,46 @@ class PIMCKernel:
         self._system = copy.copy(ka.system)
 
         if self._enableOperator:
+            if operatorRuns == None:
+                raise NameError('operatorRuns need to be set if enableOperator'
+                                ' is True.')
+            if operators == None:
+                raise NameError('operators need to be set if enableOperator'
+                                ' is True.')
+            if metroStepsPerOperatorRun == None:
+                raise NameError('metroStepsPerOperatorRun need to be set'
+                                ' if enableOperator is True.')
+            if not isinstance(operators, tuple):
+                raise TypeError('operators need to be a tuple of strings.')
+
             self._operators = ka.operators
 
         if self._enableCorrelator:
+            raise NameError('correlators need to be set if enableCorrelator'
+                            ' is True.')
+            if not isinstance(correlators, tuple):
+                raise TypeError('correlators need to be a tuple of strings.')
+
+            self.correlators = correlators
             self._correlators = ka.correlators
 
+        if self._enableSingleNodeMove:
+            if alpha == None:
+                raise NameError('alpha need to be set if enableSingleNodeMove'
+                                ' is True.')
+            self.alpha = alpha
+
         if self._enableBins:
+            if xMin == None:
+                raise NameError('xMin need to be set if enableBins'
+                                ' is True.')
+            if xMax == None:
+                raise NameError('xMax need to be set if enableBins'
+                                ' is True.')
+            if binResolutionPerDOF == None:
+                raise NameError('binResolutionPerDOF need to be set if'
+                                ' enableBins is True.')
+
             self._binResolutionPerDOF = ka.binResolutionPerDOF
             self._xMin = ka.xMin
             self._xMax = ka.xMax
@@ -100,6 +136,15 @@ class PIMCKernel:
         if self._enableBisection:
             if 2 ** self._S > self._N:
                 raise Exception("2^S must be less than or equal to N.")
+            if enableGlobalPath == None:
+                raise NameError('enableGlobalPath need to be set if'
+                                ' enableBisection is True.')
+            if enableGlobalOldPath == None:
+                raise NameError('enableGlobalOldPath need to be set'
+                                'if enableBisection is True.')
+            if enableParallelizePath == None:
+                raise NameError('enableParallelizePath need to be set'
+                                'if enableBisection is True')
 
         if self._enableParallelizePath:
             if self._enableSingleNodeMove:
