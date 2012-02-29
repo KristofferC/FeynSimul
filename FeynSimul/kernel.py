@@ -76,50 +76,55 @@ class PIMCKernel:
         self._metroStepsPerOperatorRun = ka.metroStepsPerOperatorRun
         self._system = copy.copy(ka.system)
 
+
+        # Do some checking of run parameters.
+	if not isinstance(self._beta, float):
+		raise TypeError('beta need to be a float')
+
         if self._enableOperator:
-            if operatorRuns == None:
+            self._operators = ka.operators
+	    if self._operatorRuns == None:
                 raise NameError('operatorRuns need to be set if enableOperator'
                                 ' is True.')
-            if operators == None:
+            if self._operators == None:
                 raise NameError('operators need to be set if enableOperator'
                                 ' is True.')
-            if metroStepsPerOperatorRun == None:
+            if self._metroStepsPerOperatorRun == None:
                 raise NameError('metroStepsPerOperatorRun need to be set'
                                 ' if enableOperator is True.')
-            if not isinstance(operators, tuple):
+	    if not isinstance(self._operators, tuple):
                 raise TypeError('operators need to be a tuple of strings.')
 
-            self._operators = ka.operators
 
         if self._enableCorrelator:
-            raise NameError('correlators need to be set if enableCorrelator'
-                            ' is True.')
-            if not isinstance(correlators, tuple):
+            self._correlators = ka.correlators
+	    if self._correlators == None:
+	  	  raise NameError('correlators need to be set if enableCorrelator'
+                           	  ' is True.')
+            if not isinstance(self._correlators, tuple):
                 raise TypeError('correlators need to be a tuple of strings.')
 
-            self.correlators = correlators
-            self._correlators = ka.correlators
 
         if self._enableSingleNodeMove:
-            if alpha == None:
+            self._alpha = alpha
+            if self_alpha == None:
                 raise NameError('alpha need to be set if enableSingleNodeMove'
                                 ' is True.')
-            self.alpha = alpha
 
         if self._enableBins:
-            if xMin == None:
-                raise NameError('xMin need to be set if enableBins'
-                                ' is True.')
-            if xMax == None:
-                raise NameError('xMax need to be set if enableBins'
-                                ' is True.')
-            if binResolutionPerDOF == None:
-                raise NameError('binResolutionPerDOF need to be set if'
-                                ' enableBins is True.')
-
             self._binResolutionPerDOF = ka.binResolutionPerDOF
             self._xMin = ka.xMin
             self._xMax = ka.xMax
+            if self._xMin == None:
+                raise NameError('xMin need to be set if enableBins'
+                                ' is True.')
+            if self._xMax == None:
+                raise NameError('xMax need to be set if enableBins'
+                                ' is True.')
+            if self._binResolutionPerDOF == None:
+                raise NameError('binResolutionPerDOF need to be set if'
+                                ' enableBins is True.')
+
 
         if not (self._nbrOfWalkers / self._nbrOfWalkersPerWorkGroup *
                self._nbrOfWalkersPerWorkGroup == self._nbrOfWalkers):
@@ -136,13 +141,16 @@ class PIMCKernel:
         if self._enableBisection:
             if 2 ** self._S > self._N:
                 raise Exception("2^S must be less than or equal to N.")
-            if enableGlobalPath == None:
+            if self._S == None:
+		raise NameError('S need to be set if enableBisection'
+				'is True')
+            if self._enableGlobalPath == None:
                 raise NameError('enableGlobalPath need to be set if'
                                 ' enableBisection is True.')
-            if enableGlobalOldPath == None:
+            if self._enableGlobalOldPath == None:
                 raise NameError('enableGlobalOldPath need to be set'
                                 'if enableBisection is True.')
-            if enableParallelizePath == None:
+            if self._enableParallelizePath == None:
                 raise NameError('enableParallelizePath need to be set'
                                 'if enableBisection is True')
 
@@ -291,6 +299,7 @@ class PIMCKernel:
         kernelCode = kernelCode_r % replacements
         """ String containing the kernel code that will be sent to the GPU. """
 
+        # Possibility of printing the openCL code after the preprocessor has run
         printCleaned = False
         if printCleaned:
             import commands
