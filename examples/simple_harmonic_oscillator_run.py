@@ -29,11 +29,10 @@ from FeynSimul.kernel import *
 from FeynSimul.physical_systems.harm_osc import *
 
 # Set the run parameters
-system = HarmOsc
+system = HarmOsc()
 ka = KernelArgs(system = system,
                 nbrOfWalkers = 448 * 2,
                 N = 128,
-                S = 6,
                 beta = 11.0,
                 operatorRuns = 150,
                 enableOperator = True,
