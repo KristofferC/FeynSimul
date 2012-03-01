@@ -75,6 +75,7 @@ class PIMCKernel:
         self._operatorRuns = ka.operatorRuns
         self._metroStepsPerOperatorRun = ka.metroStepsPerOperatorRun
         self._system = copy.copy(ka.system)
+        #self._PSAlpha = ka.PSAlpha
 
 
         # Do some checking of run parameters.
@@ -106,10 +107,16 @@ class PIMCKernel:
 
 
         if self._enableSingleNodeMove:
-            self._alpha = alpha
-            if self_alpha == None:
+            self._alpha = ka.alpha
+            if self._alpha == None:
                 raise NameError('alpha need to be set if enableSingleNodeMove'
                                 ' is True.')
+
+        if self._enablePathShift:
+            self._PSAlpha = ka.PSAlpha
+            if self._PSAlpha == None:
+                raise NameError('PSALpha need to be set if enablePathShift'
+                                ' is True')
 
         if self._enableBins:
             self._binResolutionPerDOF = ka.binResolutionPerDOF
@@ -139,11 +146,11 @@ class PIMCKernel:
             raise Exception("Path node number, N, must be a power of 2.")
 
         if self._enableBisection:
-            if 2 ** self._S > self._N:
-                raise Exception("2^S must be less than or equal to N.")
             if self._S == None:
 		raise NameError('S need to be set if enableBisection'
-				'is True')
+				' is True')
+            if 2 ** self._S > self._N:
+                raise Exception("2^S must be less than or equal to N.")
             if self._enableGlobalPath == None:
                 raise NameError('enableGlobalPath need to be set if'
                                 ' enableBisection is True.')
@@ -267,7 +274,7 @@ class PIMCKernel:
             replacements['nbrOfOperators'] = '%d' % len(self._operators)
             replacements['nbrOfOperatorsZeros'] = nbrOfOperatorsZeros
             replacements['opNorm'] = '%ef' % (1.0 / float(self._operatorRuns
-            * self._N * self._nbrOfWalkers / self._nbrOfThreads))
+                         * self._N * self._nbrOfWalkers / self._nbrOfThreads))
 
         if self._enableCorrelator:
             replacements['correlatorCode'] = correlatorCode

@@ -31,12 +31,12 @@ from FeynSimul.physical_systems.harm_osc import *
 # Set the run parameters
 system = HarmOsc()
 ka = KernelArgs(system = system,
-                nbrOfWalkers = 448 * 2,
+                nbrOfWalkers = 448,
                 N = 128,
                 beta = 11.0,
-                operatorRuns = 150,
+                S = 6,
                 enableOperator = True,
-                enableCorrelator = True,
+                enableCorrelator = False,
                 metroStepsPerOperatorRun = 40,
                 enableBisection = True,
                 enablePathShift = False,
@@ -44,12 +44,13 @@ ka = KernelArgs(system = system,
                 enableParallelizePath = True,
                 enableGlobalPath = False,
                 enableGlobalOldPath = False,
-                enableBins = False,
+                enableBins = True,
                 xMin = -3.5,
                 xMax = 3.5,
-                binResolutionPerDOF = 80,
-                nbrOfWalkersPerWorkGroup = 4,
-                operators = system.energyOp,
+                operatorRuns = 300,
+                binResolutionPerDOF = 30,
+                nbrOfWalkersPerWorkGroup = 1,
+                operators = (system.energyOp,),
                 correlators = ("x1",))
 
 plotWaveFunction = True
@@ -83,7 +84,7 @@ if plotWaveFunction and ka.enableBins:
 
 
 
-corrs = kernel.getCorrelator()[0]
-logDerCorr = -np.gradient(np.log(corrs[0]), ka.beta / ka.N)
-pl.plot(logDerCorr, '*')
-pl.show()
+#corrs = kernel.getCorrelator()[0]
+#logDerCorr = -np.gradient(np.log(corrs[0]), ka.beta / ka.N)
+#pl.plot(logDerCorr, '*')
+#pl.show()

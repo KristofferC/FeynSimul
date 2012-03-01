@@ -34,6 +34,7 @@ class KernelArgs:
                  nbrOfWalkersPerWorkGroup,
                  S=None,
                  alpha=None,
+                 PSAlpha=None,
                  enableParallelizePath=None,
                  metroStepsPerOperatorRun=None,
                  enableGlobalPath = None,
@@ -101,6 +102,11 @@ class KernelArgs:
         :param alpha: Parameter to the single node move sampling algorithm. A
                       node will be displaced between -alpha and alpha uniformly.
 
+        :type PSAlpha: float
+        :param PSAlpha: Parameter to the smapling algorithm that moves a chunk
+                        of the path. The chunk will be displaced between
+                        -PSAlpha and PSAlpha uniformly.
+
         :type enableParallelizePath: boolean
         :param enableParallelizePath Parameter to the bisection sampling algorithm.
                                      Determines if many threads should work on the same
@@ -144,8 +150,7 @@ class KernelArgs:
                                     do`e for the probability density calculations.
                                     The total number of sub cubes are
                                     binResolutionPerDOF ** DOF.
-	    """
-
+	"""
         self.system = system
         self.nbrOfWalkers = nbrOfWalkers
         self.N = N
@@ -162,7 +167,7 @@ class KernelArgs:
      
 
         self.operatorRuns = operatorRuns
-	    self.operators = operators
+	self.operators = operators
         self.metroStepsPerOperatorRun = metroStepsPerOperatorRun
 
         self.enableCorrelator = enableCorrelator
