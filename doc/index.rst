@@ -22,8 +22,8 @@ Contents:
    :maxdepth: 2
 
    About <about.rst>
+   Installation guide <guide/index.rst>
    Tutorial <tutorial/index.rst>
-   Guide <guide/index.rst>
    Library <library/index.rst>
 
 

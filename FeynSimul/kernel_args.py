@@ -53,7 +53,7 @@ class KernelArgs:
         :type system: :class:`physical_system` class instance
         :param system: The physical system to simulate.
 
-        :type nbrOfWalkers int
+        :type nbrOfWalkers: int
         :param nbrOfWalkers: The number of independent simulations that
                              are started simultaneously.
 
@@ -108,10 +108,10 @@ class KernelArgs:
                         -PSAlpha and PSAlpha uniformly.
 
         :type enableParallelizePath: boolean
-        :param enableParallelizePath Parameter to the bisection sampling algorithm.
-                                     Determines if many threads should work on the same
-                                     simulations. This can greatly increase convergence
-                                     speed.
+        :param enableParallelizePath: Parameter to the bisection sampling algorithm.
+                                      Determines if many threads should work on the same
+                                      simulations. This can greatly increase convergence
+                                      speed.
         
         :type metroStepsPerOperatorRun: int
         :param metroStepsPerOperatorRun: The number of sampling iterations to do before
@@ -125,7 +125,9 @@ class KernelArgs:
                                  enabled.
         
         :type enableGlobalOldPath: boolean
-        :param enableGlobalOldPath:
+        :param enableGlobalOldPath: Determines if the path interval changed
+                                    that might be reverted to if the Metropolis step is rejected
+                                    will be stored in global memory.
         
         :type operators: tuple of strings
         :param operators: The operators to be calculated.

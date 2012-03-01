@@ -29,23 +29,23 @@ from FeynSimul.pimc_utils import *
 
 from FeynSimul.physical_systems.lm2m2_3part import *
 
-ka= KernelArgs()
-ka.nbrOfWalkers = 64
-ka.N = 8
-ka.enablePathShift = False
-ka.enableBisection = True
-ka.enableSingleNodeMove = False
-ka.enableGlobalPath = True
-ka.enableGlobalOldPath = True
-ka.enableParallelizePath = True
-ka.enableBins = False
-ka.beta = 1000
-ka.nbrOfWalkersPerWorkGroup = 4
-ka.operatorRuns = 100
-ka.enableOperator = True
-ka.enableCorrelator = False
-ka.metroStepsPerOperatorRun = 40
-ka.system = Lm2m2_3part()
+ka = KernelArgs(nbrOfWalkers = 64,
+                N = 8,
+                enablePathShift = False,
+                enableBisection = True,
+                enableSingleNodeMove = False,
+                enableGlobalPath = True,
+                enableGlobalOldPath = True,
+                enableParallelizePath = True,
+                enableBins = False,
+                beta = 1000.0,
+                nbrOfWalkersPerWorkGroup = 4,
+                operatorRuns = 100,
+                enableOperator = True,
+                enableCorrelator = False,
+                metroStepsPerOperatorRun = 40,
+                system = Lm2m2_3part())
+
 # Time to run simul
 endTime = 60 * 60 * 24 * 14
 

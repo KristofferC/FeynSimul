@@ -1,6 +1,7 @@
-Guide
+Installation guide
 =====
 
-Install like this, run setup.py install loalwaoeka
+The program is installed by simply running setup.py with the install flag. You
+might need administrator privileges for this to work.
 
-guide guide
+Borde skriva något mer här kanske...........

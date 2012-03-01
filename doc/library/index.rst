@@ -1,3 +1,5 @@
+.. _library:
+
 Library
 =======
 
@@ -7,12 +9,15 @@ Kernel
     :members:
     :special-members:
 
+.. _kernelargs:
 
 KernelArgs
 ----------
 .. automodule:: kernel_args
     :members:
+    :undoc-members:
     :special-members:
+
 
 PimcUtils
 ---------

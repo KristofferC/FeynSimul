@@ -482,11 +482,14 @@ class PIMCKernel:
                        float(self._operatorRuns * self._N))
         correlatorStandardError = (correlatorValues.std(axis = 0) /
                         np.sqrt(self._nbrOfWalkers))
-        return (correlatorMean, correlatorStandardError)
+        return (correlatorMean.flatten(), correlatorStandardError.flatten())
 
     def getBinCounts(self):
         """
+        Returns the probability density calculated.
 
+        :returns: Probability density
+        :rtype: nd array
         """
         if not self._enableBins:
             raise Exception("Can only return bins when "
@@ -504,8 +507,8 @@ class PIMCKernel:
         """
         Returns the run time for the kernel to execute.
 
-        ;returns: Time for kernel to run.
-        ;rtype: float
+        :returns: Time for kernel to run.
+        :rtype: float
         """
         return 1e-9 * (self._kernelObj.profile.end -
                          self._kernelObj.profile.start)
