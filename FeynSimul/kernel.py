@@ -482,7 +482,7 @@ class PIMCKernel:
                        float(self._operatorRuns * self._N))
         correlatorStandardError = (correlatorValues.std(axis = 0) /
                         np.sqrt(self._nbrOfWalkers))
-        return (correlatorMean.flatten(), correlatorStandardError.flatten())
+        return (correlatorMean, correlatorStandardError)
 
     def getBinCounts(self):
         """
