@@ -26,6 +26,7 @@ hold the parameters for the simulation. This class does not contain any methods
 and is just for convenience. The class initiatior contains quite a lot of
 parameters and what these do and which ones are needed to define can be read
 about in the documentation for :ref:`kernelargs`.
+
     >>> phys_system = HarmOsc()
     >>> ka = KernelArgs(system = phys_system,
                         nbrOfWalkers = 32 * 28,
