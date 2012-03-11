@@ -16,7 +16,6 @@
 import os
 from datetime import datetime
 from time import time
-import sys
 import copy
 
 import csv
@@ -26,9 +25,122 @@ from kernel_args import *
 from kernel import *
 
 def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula, 
-        mStepsPerOPRun, runsPerN, maxWGSize, continueRun=False, finalN=-1,
-        runTime=-1, verbose=False):
+        mStepsPerOPRun, runsPerN, maxWGSize, continueRun=False, cont_path=None,
+        cont_S=None, cont_N=None, finalN=-1, simTime=-1, verbose=False):
+    """
+    A function to automate some of the things one would commonly like to do
+    when doing a simulation. This function helps with saving data to a file,
+    resuming a simulation that was interrupted, increasing convergence speed as
+    well as helps determining what ``N`` is needed for the Trotter product
+    formula to be be accurate.
 
+    This is done by starting with a low ``N`` and running the simulation for
+    this ``N`` until convergence. A new path with twice as many nodes is then
+    created by interpolating between the nodes for the old path. This procedure
+    is done until the values of the operators does not noticable change when
+    ``N`` is increased.
+
+    The data for every run is saved to a file which can then later be used for
+    post processing. This post processing can be done while the
+    simulation is still going on to check for convergence and error intervals.
+
+    The paths are saved at specified intervals and if the simulation crash it
+    can be resumed from one of these saved path files. The paths are also
+    automatically saved when ``N`` is increased.
+
+    This function only works with the bisection sampling method right now.
+
+    :type ka: :class:`kernel_args.kernelArgs` class
+    :param ka: An instance of kernelArgs describing what kind of
+               kernel to build.
+    
+    :type startXList: ndarray
+    :param startXList: The initial paths for an individual simulation are all
+                       straight lines. Where in space these straight lines will
+                       lie are determined by the numbers in this array. One
+                       number for each path.
+                       These could for example be uniform random numbers to get
+                       a nice spread of initial paths between different
+                       independent simulations.
+
+    
+    :type savePathsInterval: int
+    :param savePathsInterval: How many runs to wait before saving the path to
+                              disk.
+
+    :type experimentName: string
+    :param experimentName: A label for the simulation. The results will be
+                           stored in a map with this name.
+
+    :type opRunsFormula: function
+    :param opRunsFormula: f(N, S) that returns the number of operator runs the
+                          kernel should do before returning. For an
+                          approximately constant run time this should be
+                          inversely proportional to :math:`2^S`.
+
+    :type mStepsPerOPRun: function
+    :param mStepsPerOPRun: f(N, S) that returns the number of metropolis
+                           samples to do before calculating the operator.
+
+    :type runsPerN: function
+    :param runsPerN: f(N, S) that returns the number of runs to do before
+                     increasing the number of nodes in the path.
+
+    :type maxWGSize: int
+    :param maxWGSize: Maximum work group size for the GPU for this specific
+                      kernel... TODO: automate this with
+                      cl.kernel_work_group_info......
+
+    :type continueRun: boolean
+    :param continueRun: Enable to indicate that this will continue a simulation
+                        that was 
+  
+    :type cont_path: string
+    :param cont_path: The path to a file where a path from another simulation
+                      was saved.
+    
+    :type cont_S: int
+    :param cont_S: The value of ``S`` to start using when continuing an earlier
+                   run.
+
+    :type cont_N: int
+    :param cont_N: The value of ``N`` to start using when continuing an earlier
+                   run.
+
+    :type finalN: int
+    :param finalN: At what point the number of nodes in the path should stop
+                  increasing. Defaulted to -1 which means it will never stop.
+
+    :type simTime: float
+    :param simTime: The total time in seconds that the simulation will run for. 
+                    Defaulted to -1 which means that it will never stop.
+
+    :type verbose: boolean
+    :param verbose: Prints out extra information to stdout if enabled.
+    """
+
+    kaMod = copy.copy(ka)
+
+    if kaMod.enableBisection == False:
+        raise Exception('This function currently only works with bisection'
+                         ' sampling')
+
+    if continueRun:
+        if cont_path == None:
+            raise NameError('cont_path need to be defined if continueRun'
+                            'is enabled')
+        if cont_S == None:
+            raise NameError('cont_S need to be defined if continueRun'
+                            ' is enabled')
+        if cont_N == None:
+            raise NameError('cont_N need to be defined if continueRun'
+                            ' is enabled')
+
+        kaMod.N = cont_N
+        kaMod.S = cont_S
+    else:
+        kaMod.N = ka.N
+        kaMod.S = 1
     startClock = time()
     pathChanges = 0
     timestamp  = datetime.now().strftime("%Y-%m-%d/%H.%M.%S")
@@ -38,18 +150,12 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
     if not os.path.exists("results/" + experimentName + "/" + timestamp):
         os.makedirs("results/" + experimentName + "/" + timestamp)
     
-    kaMod = copy.copy(ka)
+   
 
-    if continueRun:
-        kaMod.N = continueRun[1]
-        kaMod.S = continueRun[2]
-    else:
-        kaMod.N = ka.N
-        kaMod.S = 1
     
     firstNRun = True
 
-    while finalN==-1 or kaMod.N <= finalN:
+    while finalN == -1 or kaMod.N <= finalN:
         # Make sure S is large enough to not use too many walkers in a WG
         while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
             kaMod.S += 1
@@ -73,10 +179,10 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                             startXList[i][j])
             else:
                 initialPaths = np.zeros((ka.nbrOfWalkers, kaMod.N * kaMod.system.DOF))
-                reader = csv.reader(open(continueRun[0]), delimiter='\t')
+                reader = csv.reader(open(cont_path), delimiter='\t')
                 k = 0
                 for row in reader:
-                    initialPaths[k] = map(float,row)
+                    initialPaths[k] = map(float, row)
                     k += 1
             kernel.setPaths(initialPaths)
         else:
@@ -101,13 +207,13 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
         nRuns = 1
         runsThisN = runsPerN(kaMod.N, kaMod.S)
         while nRuns <= runsThisN or kaMod.N == finalN:
-            if runTime != -1 and time() - startClock > runTime:
+            if simTime != -1 and time() - startClock > simTime:
                 if verbose:
                     print("Time limit reached!")
                 return
             kernel.run()
             pathChanges += kernel.getMetroStepsPerRun()
-            output(filename, kaMod.N, time()-startClock, pathChanges
+            _output(filename, kaMod.N, time()-startClock, pathChanges
                    , kernel.getAcceptanceRate(), kernel.getOperators()
                    , ka.beta, kaMod.S,verbose=verbose)
             # Save paths
@@ -137,8 +243,45 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                 kaMod.S = max(1, kaMod.S - 1)
             kaMod.N *= 2
 
-def output(filename, N, t, pathChanges, acceptanceRate
+def _output(filename, N, t, pathChanges, acceptanceRate
            , operatorMean, beta, S, verbose=False):
+    """
+    Used by the modN function to save data from a run into a file in ASCII
+    format.
+
+    :type: filename: string
+    :param filename: path + filename of the data file.
+
+    :type N: int
+    :param N: Total nodes in a path for the current run.
+
+    :type t: float
+    :param t: Total time elapsed since start of simulation.
+
+    :type pathChanges: int
+    :param pathChanges: Total number of changes done to a path since the start
+                        of simulation
+
+    :type acceptanceRate: float
+    :param acceptanceRate: The acceptance rate for this run.
+
+    :type operatorMean: ndarray
+    :param operatorMean: Mean of the operator calculated by each independent
+                         simulations. Will be an array with the length as the
+                         product of the number of operators and the number of
+                         independent simulations
+
+    :type beta: float
+    :param beta: Euclidian time used for the simulation. Should be constant
+                 between runs.
+
+    :type S: int
+    :param S: Parameter for bisection sampling.
+
+    :type verbose: boolean
+    :param verbose: If enabled prints a bit of info to stdout.
+    """
+
     if verbose:
         print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
                 str(beta)+"\tAR: " + str(acceptanceRate) + "\tOPs: " +
@@ -151,7 +294,7 @@ def output(filename, N, t, pathChanges, acceptanceRate
             f_data.write("#N\tTime\tpathChanges\tAR\tS")
             for i in range(len(operatorMean)):
                 for j in range(len(operatorMean[0])):
-                 f_data.write("\tOperator " + str(i) + ", Thread " + str(j) )
+                 f_data.write("\tOperator " + str(i) + ", Walker " + str(j) )
             f_data.write("\n")
 
         f_data.write(str(N)+"\t")
