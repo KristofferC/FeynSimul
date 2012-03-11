@@ -44,7 +44,11 @@ def humanReadableSize(size):
 
 
 class PIMCKernel:
-    "klass klass"
+    """
+    Upon initialization redies the kernel to be run on the GPU. Contains
+    methods to fetch data from the simulation after it has been run.
+    """
+
     def __init__(self, ka):
         """
         Loads the kernel to the GPU and readies it to be run.
@@ -587,6 +591,10 @@ class PIMCKernel:
                 str(self._nbrOfWalkers
                     / self._nbrOfWalkersPerWorkGroup))
         return ret
+    
+    def getMaxKernelWGSize(self):
+        return self._kernel.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE, dev)
 
     def exceedsLimits(self):
         """
