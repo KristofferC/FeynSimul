@@ -6,22 +6,13 @@
 Welcome to FeynSimul's documentation!
 =====================================
 
-
-
-The :py:mod:`FeynSimul` module provides blah blah blah.
-
-.. math:: \frac{1}{\pi^2}
-    :label: matte
-
-Hej hopp :eq:`matte`.
-
-Contents:
-
+The :py:mod:`FeynSimul` module is a tool to run simulations to calculate for
+example the ground state energy in a quenatum mechanical system where the
+interactions can be described by a local potential.
 
 .. toctree::
    :maxdepth: 2
 
-   About <about.rst>
    Installation guide <guide/index.rst>
    Tutorial <tutorial/index.rst>
    Library <library/index.rst>
@@ -35,12 +26,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-Meta information
-================
-
-.. toctree::
-   :maxdepth: 1
-
-   Licencing <licencing.rst>
 
