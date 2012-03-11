@@ -18,6 +18,7 @@ KernelArgs
     :undoc-members:
     :special-members:
 
+.. _pimcutils:
 
 PimcUtils
 ---------
