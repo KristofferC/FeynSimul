@@ -36,6 +36,16 @@
 //Description: This is a placeholder for defines used in the program.
 %(defines)s
 
+#ifdef ENABLE_DOUBLE
+    #define FLOAT_TYPE double
+    #ifdef PLATFORM==nvida
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    // TODO: Add check to change extension type for AMD:
+    // AMD:    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+    // NVIDIA: #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#else
+    #define FLOAT_TYPE float
+#endif
 
 #ifdef ENABLE_GLOBAL_PATH
 	#define PATH_TYPE_KEYWORD __global
@@ -62,7 +72,7 @@
 //Description: This returns the value of the operator for a specified point
 //             in time (index in [0, N-1]).
 #ifdef ENABLE_OPERATOR
-inline void operator (DOF_ARGUMENT_DECL,float opAccum[%(nbrOfOperators)s])
+inline void operator (DOF_ARGUMENT_DECL,FLOAT_TYPE opAccum[%(nbrOfOperators)s])
 {
     %(operatorCode)s
 }
@@ -75,7 +85,7 @@ inline void operator (DOF_ARGUMENT_DECL,float opAccum[%(nbrOfOperators)s])
 //Description: This returns the value of the operator for a specified point
 //             in time (index in [0, N-1]).
 #ifdef ENABLE_CORRELATOR
-inline void correlator (DOF_ARGUMENT_DECL,float corProd[%(nbrOfCorrelators)s])
+inline void correlator (DOF_ARGUMENT_DECL,FLOAT_TYPE corProd[%(nbrOfCorrelators)s])
 {
     %(correlatorCode)s
 }
@@ -87,7 +97,7 @@ inline void correlator (DOF_ARGUMENT_DECL,float corProd[%(nbrOfCorrelators)s])
 //##############################################################################
 //Description: This returns the value of the potential for a specified
 //             point in time (index in [0, N-1]).
-inline float potential(DOF_ARGUMENT_DECL)
+inline FLOAT_TYPE potential(DOF_ARGUMENT_DECL)
 {
     return %(potential)s;
 }
@@ -111,7 +121,7 @@ inline void xorshift (uint4 *seedPtr)
 //##############################################################################
 //Description: This returns a random floating point number by dividing w with
 //             UINT32_MAX (hardcoded).
-inline float
+inline FLOAT_TYPE
 randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
@@ -123,9 +133,9 @@ randFloat(uint4 *seedPtr)
 //#                                kinEnergyEst                                #
 //##############################################################################
 //Description: This returns potential energy between the points.
-inline float kinEnergyEst (float leftX, float rightX)
+inline FLOAT_TYPE kinEnergyEst (FLOAT_TYPE leftX, FLOAT_TYPE rightX)
 {
-    float delta = leftX - rightX;
+    FLOAT_TYPE delta = leftX - rightX;
     return 0.5f * (delta * delta) * %(epsilon_inv2)s;
 }
 
@@ -137,23 +147,23 @@ inline float kinEnergyEst (float leftX, float rightX)
 //             Metropolis algorithm.
 #ifdef ENABLE_BISECTION
 
-inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
+inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
 #ifdef ENABLE_GLOBAL_OLD_PATH
-                          __global float *oldPath,
+                          __global FLOAT_TYPE *oldPath,
 #endif
                          uint startPoint, uint4 *seedPtr,
                          uint *local_accepts, int *twoPow,
-                         float *sigmaN)
+                         FLOAT_TYPE *sigmaN)
 {
 #ifndef ENABLE_GLOBAL_OLD_PATH
     // If path to be changed is store in local memory allocate
     // memory for it.
-    float oldPath[(%(2_POW_S)s -1) * %(DOF)s];
+    FLOAT_TYPE oldPath[(%(2_POW_S)s -1) * %(DOF)s];
 #endif
 
     // Save path that will later be changed. Also calculate action for the old
     // path.
-    float actionOld = 0.0f;
+    FLOAT_TYPE actionOld = 0.0f;
     for (int i = 1; i < %(2_POW_S)s; i++)
     {
         for (int degree = 0; degree < %(DOF)s; degree++)
@@ -173,7 +183,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
         {
             iCurr -= %(N)s;
         }
-        PATH_TYPE_KEYWORD float *pathPointPtr = path + iCurr;
+        PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr = path + iCurr;
         actionOld += %(epsilon)s *potential(DOF_ARGUMENT_DATA);
     }
 
@@ -214,9 +224,9 @@ inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
             {
                 int Ndegree = degree * %(N)s;
                 // Need two random numbers for Box Muller method.
-                float u = randFloat(seedPtr);
-                float v = randFloat(seedPtr);
-                float rz;
+                FLOAT_TYPE u = randFloat(seedPtr);
+                FLOAT_TYPE v = randFloat(seedPtr);
+                FLOAT_TYPE rz;
                 // Corner case if randFloat gives a zero.
                 if (v == 0.0f)
                 {
@@ -237,7 +247,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
     }
 
     // Calculate action for the new path
-    float actionNew = 0.0f;
+    FLOAT_TYPE actionNew = 0.0f;
     for (int i = 1; i < %(2_POW_S)s; i++)
     {
         int iCurr = i + startPoint;
@@ -245,7 +255,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
         {
             iCurr -= %(N)s;
         }
-        PATH_TYPE_KEYWORD float *pathPointPtr=path + iCurr;
+        PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr=path + iCurr;
         actionNew += %(epsilon)s *potential(DOF_ARGUMENT_DATA);
     }
     // Path rejected:
@@ -281,19 +291,19 @@ inline void doBisectMove (PATH_TYPE_KEYWORD float *path,
 //returns the difference in energy between the shifted and original path.
 // TODO: This should really do the action checking itself and revert if needed.
 #ifdef ENABLE_PATH_SHIFT
-    inline float
-shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
+    inline FLOAT_TYPE
+shiftPathEnergyDiff (PATH_TYPE_KEYWORD FLOAT_TYPE *x, uint degree, FLOAT_TYPE offset,
         uint left, uint right)
 {
     if (left == right)
     {
         return 0.0f;
     }
-    float kinDiff = 0.0f;
-    float potDiff = 0.0f;
+    FLOAT_TYPE kinDiff = 0.0f;
+    FLOAT_TYPE potDiff = 0.0f;
     uint leftleft;
     uint rightright;
-    PATH_TYPE_KEYWORD float *xMinusNPart = x - %(N)s * degree;
+    PATH_TYPE_KEYWORD FLOAT_TYPE *xMinusNPart = x - %(N)s * degree;
     if (left < right)
     {
         rightright = right + 1;
@@ -312,7 +322,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
         kinDiff -= kinEnergyEst (x[right], x[rightright]);
         for (int i = left; i <= right; i++)
         {
-	    PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
+	    PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr=xMinusNPart + i;
             potDiff -= potential (DOF_ARGUMENT_DATA);
             x[i] = x[i] + offset;
             potDiff += potential (DOF_ARGUMENT_DATA);
@@ -327,7 +337,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
         kinDiff -= kinEnergyEst (x[right], x[right + 1]);
         for (int i = left; i < %(N)s; i++)
         {
-            PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
+            PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr=xMinusNPart + i;
             potDiff -= potential (DOF_ARGUMENT_DATA);
             x[i] += offset;
             potDiff += potential (DOF_ARGUMENT_DATA);
@@ -335,7 +345,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
 
         for (int i = 0; i <= right; i++)
         {
-            PATH_TYPE_KEYWORD float *pathPointPtr=xMinusNPart + i;
+            PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr=xMinusNPart + i;
             potDiff -= potential (DOF_ARGUMENT_DATA);
             x[i] += offset;
             potDiff += potential (DOF_ARGUMENT_DATA);
@@ -356,7 +366,7 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD float *x, uint degree, float offset,
 #ifdef ENABLE_BINS
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
     inline void
-histogram (PATH_TYPE_KEYWORD float *local_path, __global uint *binCounts)
+histogram (PATH_TYPE_KEYWORD FLOAT_TYPE *local_path, __global uint *binCounts)
 {
     int ok = 1;
     int inc = 1;
@@ -390,17 +400,17 @@ histogram (PATH_TYPE_KEYWORD float *local_path, __global uint *binCounts)
 //Description: The following code is the OpenCL kernel. This is the code that is
 //             called from Python and takes all the input and delivers output.
 __kernel void
-metropolis (__global float *paths
+metropolis (__global FLOAT_TYPE *paths
             ,__global uint *accepts
             ,__global uint *seeds
 #ifdef ENABLE_GLOBAL_OLD_PATH
-            ,__global float *oldPaths
+            ,__global FLOAT_TYPE *oldPaths
 #endif
 #ifdef ENABLE_OPERATOR
-           ,__global float *opMeans
+           ,__global FLOAT_TYPE *opMeans
 #endif
 #ifdef ENABLE_CORRELATOR
-            ,__global float *corMeans
+            ,__global FLOAT_TYPE *corMeans
 #endif
 #ifdef ENABLE_BINS
 	    ,__global uint *binCounts
@@ -432,22 +442,22 @@ metropolis (__global float *paths
 
 #ifdef ENABLE_GLOBAL_PATH
 #ifdef ENABLE_PARALELLIZE_PATH
-    PATH_TYPE_KEYWORD float* local_path =paths + walkerId * %(pathSize)s;
+    PATH_TYPE_KEYWORD FLOAT_TYPE* local_path =paths + walkerId * %(pathSize)s;
 #else
-    PATH_TYPE_KEYWORD float* local_path =paths + threadId * %(pathSize)s;
+    PATH_TYPE_KEYWORD FLOAT_TYPE* local_path =paths + threadId * %(pathSize)s;
 #endif
 #else
     //This imports the path corresponding to this thread from the collection
     //of all paths stored in the field paths.
 #ifdef ENABLE_PARALELLIZE_PATH
-    PATH_TYPE_KEYWORD float workGroupPath[%(pathSize)s * %(nbrOfWalkersPerWorkGroup)s];
-    PATH_TYPE_KEYWORD float *local_path = workGroupPath + get_local_id(1) * %(pathSize)s;
+    PATH_TYPE_KEYWORD FLOAT_TYPE workGroupPath[%(pathSize)s * %(nbrOfWalkersPerWorkGroup)s];
+    PATH_TYPE_KEYWORD FLOAT_TYPE *local_path = workGroupPath + get_local_id(1) * %(pathSize)s;
 
     for (uint i = 0; i < %(2_POW_S)s * %(DOF)s; i++)
         local_path[i + get_local_id(0) * %(2_POW_S)s * %(DOF)s] = paths[walkerId *
             %(pathSize)s + i + get_local_id(0) * %(2_POW_S)s * %(DOF)s];
 #else
-	PATH_TYPE_KEYWORD float local_path[%(pathSize)s];
+	PATH_TYPE_KEYWORD FLOAT_TYPE local_path[%(pathSize)s];
     for (uint i = 0; i < %(pathSize)s; i++)
         local_path[i] = paths[threadId * %(pathSize)s + i];
 #endif
@@ -457,20 +467,20 @@ metropolis (__global float *paths
     // Create the stdev array for bisection algorithm and
     // an array with powers of two.
     int twoPow[%(S)s + 1];
-    float sigmaN[%(S)s + 1];
+    FLOAT_TYPE sigmaN[%(S)s + 1];
     int Ns = %(2_POW_S)s;
     twoPow[0] = 1;
 
-    sigmaN[0] = ((float) Ns) * %(epsilon)s;
+    sigmaN[0] = ((FLOAT_TYPE) Ns) * %(epsilon)s;
     for (int i = 1; i <= %(S)s; i++)
     {
         twoPow[i] = twoPow[i - 1] * 2;
-        sigmaN[i] = sqrt (((float) Ns * %(epsilon)s / (2.0f * (float) twoPow[i])));
+        sigmaN[i] = sqrt (((FLOAT_TYPE) Ns * %(epsilon)s / (2.0f * (FLOAT_TYPE) twoPow[i])));
     }
 #endif
 
 #ifdef ENABLE_OPERATOR
-    float opAccum[%(nbrOfOperators)s]={%(nbrOfOperatorsZeros)s};
+    FLOAT_TYPE opAccum[%(nbrOfOperators)s]={%(nbrOfOperatorsZeros)s};
 #endif
 
     // The following loops are responsible for creating Metropolis
@@ -495,7 +505,7 @@ metropolis (__global float *paths
             uint left =seedG.w & mask;
             xorshift (&seedG);
             uint right = seedG.w & mask;
-            float offset =
+            FLOAT_TYPE offset =
                 %(PSAlpha)s * (2.0f * randFloat (&seed) - 1.0f);
 
             // Revert path shift if rejected by Metropolis step
@@ -527,18 +537,18 @@ metropolis (__global float *paths
                 rightIndex -= %(N)s;
             }
 
-            float oldX = local_path[modPathPoint];
-            float modX = oldX + (2.0f *randFloat(&seed)-1.0f)*%(alpha)s;
+            FLOAT_TYPE oldX = local_path[modPathPoint];
+            FLOAT_TYPE modX = oldX + (2.0f *randFloat(&seed)-1.0f)*%(alpha)s;
 
             //Calculate the difference in energy (action) for the new path
             //compared to the old, stored in diffE.
-            float diffE = kinEnergyEst(modX, local_path[rightIndex])
+            FLOAT_TYPE diffE = kinEnergyEst(modX, local_path[rightIndex])
                 + kinEnergyEst(modX, local_path[leftIndex])
                 - kinEnergyEst(local_path[modPathPoint], local_path[leftIndex])
                 - kinEnergyEst(local_path[modPathPoint],
                         local_path[rightIndex]);
 
-            PATH_TYPE_KEYWORD float *pathPointPtr=local_path + modPoint;
+            PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr=local_path + modPoint;
             diffE -= potential(DOF_ARGUMENT_DATA);
             local_path[modPathPoint] = modX;
             diffE += potential(DOF_ARGUMENT_DATA);
@@ -585,7 +595,7 @@ metropolis (__global float *paths
 #endif
         {
 #ifdef ENABLE_OPERATOR
-	    PATH_TYPE_KEYWORD float *pathPointPtr = local_path + timeSlice;
+	    PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr = local_path + timeSlice;
 	    operator(DOF_ARGUMENT_DATA, opAccum);
 #endif
 #ifdef ENABLE_BINS
@@ -616,8 +626,8 @@ metropolis (__global float *paths
 		    timeSlice2 = timeSlice + corT - %(N)s;
                 }
 
-    	            float corProd[%(nbrOfCorrelators)s] = {%(nbrOfCorrelatorsOnes)s};
-                    PATH_TYPE_KEYWORD float *pathPointPtr = local_path + timeSlice;
+    	            FLOAT_TYPE corProd[%(nbrOfCorrelators)s] = {%(nbrOfCorrelatorsOnes)s};
+                    PATH_TYPE_KEYWORD FLOAT_TYPE *pathPointPtr = local_path + timeSlice;
                     correlator(DOF_ARGUMENT_DATA, corProd);
 
                     pathPointPtr = local_path + timeSlice2;

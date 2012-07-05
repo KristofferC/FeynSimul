@@ -187,6 +187,9 @@ class PIMCKernel:
             self._nbrOfThreads = self._nbrOfWalkers
 
         defines = ""
+        
+        if self._enableDouble:
+            defines += "#define ENABLE_DOUBLE\n"
 
         if self._enableBins:
             defines += "#define ENABLE_BINS\n"
@@ -303,6 +306,7 @@ class PIMCKernel:
             replacements['nbrOfBins'] = '%d' % self._binResolutionPerDOF ** self._system.DOF
             replacements['invBinSize'] = '%ef' % (float(self._binResolutionPerDOF) /
                                          float(self._xMax - self._xMin))
+            
 
         #Import kernel code and paste 'replacements' into it
         kernelCode_r = open(os.path.dirname(__file__) +

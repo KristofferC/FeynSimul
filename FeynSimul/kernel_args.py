@@ -32,6 +32,7 @@ class KernelArgs:
                  enableSingleNodeMove,
                  enableBins,
                  nbrOfWalkersPerWorkGroup,
+                 enableDouble=None,
                  S=None,
                  alpha=None,
                  PSAlpha=None,
@@ -152,6 +153,11 @@ class KernelArgs:
                                     do`e for the probability density calculations.
                                     The total number of sub cubes are
                                     binResolutionPerDOF ** DOF.
+                                    
+        :type enableDouble: boolean
+        :param enableDouble: Determine if double or single precision is to be
+                             used for floats on the GPU. Default is single
+                             precision.
 	"""
         self.system = system
         self.nbrOfWalkers = nbrOfWalkers
@@ -188,4 +194,5 @@ class KernelArgs:
         self.enableParallelizePath = enableParallelizePath
         self.enableGlobalPath = enableGlobalPath
         self.enableGlobalOldPath = enableGlobalOldPath
+        self.enableDouble = enableDouble
 
