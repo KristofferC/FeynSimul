@@ -38,7 +38,6 @@
 
 #ifdef ENABLE_DOUBLE
     #define FLOAT_TYPE double
-    #ifdef PLATFORM==nvida
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     // TODO: Add check to change extension type for AMD:
     // AMD:    #pragma OPENCL EXTENSION cl_amd_fp64 : enable

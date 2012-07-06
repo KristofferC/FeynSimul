@@ -71,6 +71,7 @@ class PIMCKernel:
         self._enableParallelizePath = ka.enableParallelizePath
         self._enableGlobalPath = ka.enableGlobalPath
         self._enableGlobalOldPath = ka.enableGlobalOldPath
+        self._enableDouble = ka.enableDouble
         self._nbrOfWalkers = ka.nbrOfWalkers
         self._nbrOfWalkersPerWorkGroup = ka.nbrOfWalkersPerWorkGroup
         self._N = ka.N
@@ -343,7 +344,7 @@ class PIMCKernel:
         try:
             self._paths = cl.array.zeros(self._queue,
                               (self._nbrOfWalkers, self._N * self._system.DOF),
-                              np.float32)
+                              np.float64 if self._enableDouble else np.float32)
 
             #Buffer for storing number of accepted values and
             #seeds for the xorshfitPRNG
@@ -359,7 +360,8 @@ class PIMCKernel:
                 #pyopencl.array objects are created for storing
                 #the calculated operator means from each thread
                 self._operatorValues = cl.array.zeros(self._queue,
-                        self._nbrOfThreads * len(self._operators), np.float32)
+                        self._nbrOfThreads * len(self._operators),
+                        np.float64 if self._enableDouble else np.float32)
 
             if self._enableCorrelator:
                 #pyopencl.array objects are created for storing
@@ -371,7 +373,8 @@ class PIMCKernel:
             if self._enableGlobalOldPath:
                 self._oldPath = cl.array.zeros(self._queue,
                                     (self._nbrOfThreads,
-                                    (2 ** self._S - 1) * self._system.DOF), np.float32)
+                                    (2 ** self._S - 1) * self._system.DOF),
+                                    np.float64 if self._enableDouble else np.float32)
 
             #A buffer for the multidimensional array for storing
             #the resulting number of bin counts
@@ -447,7 +450,7 @@ class PIMCKernel:
         :param paths: The paths to be set in the device.
         :type paths: numpy array
         """
-        self._paths = cl.array.to_device(self._queue,paths.astype(np.float32))
+        self._paths = cl.array.to_device(self._queue,paths.astype(np.float64 if self._enableDouble else np.float32))
 
     def getOperators(self):
         """
@@ -509,7 +512,7 @@ class PIMCKernel:
                  / float(self._binResolutionPerDOF)) **
                  self._system.DOF)
         # Normalize probability density
-        return (self._binCounts.get().astype(np.float32)
+        return (self._binCounts.get().astype(np.float64 if self._enableDouble else np.float32)
                               / (binVol * totBinCount))
     def getRunTime(self):
         """
