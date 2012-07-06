@@ -37,12 +37,19 @@
 %(defines)s
 
 #ifdef ENABLE_DOUBLE
+    // Set float precision to double
     #define FLOAT_TYPE double
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-    // TODO: Add check to change extension type for AMD:
-    // AMD:    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-    // NVIDIA: #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    
+    // Check that pragmas for 64bit actually exists
+    #ifdef cl_khr_fp64
+        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    #elif defined(cl_amd_fp64)
+        #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+    #else
+        #error "Double precision floating point not supported by OpenCL implementation."
+    #endif
 #else
+    // Set float precision to single
     #define FLOAT_TYPE float
 #endif
 
@@ -135,7 +142,7 @@ randFloat(uint4 *seedPtr)
 inline FLOAT_TYPE kinEnergyEst (FLOAT_TYPE leftX, FLOAT_TYPE rightX)
 {
     FLOAT_TYPE delta = leftX - rightX;
-    return 0.5f * (delta * delta) * %(epsilon_inv2)s;
+    return 0.5 * (delta * delta) * %(epsilon_inv2)s;
 }
 
 //##############################################################################
@@ -162,7 +169,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
 
     // Save path that will later be changed. Also calculate action for the old
     // path.
-    FLOAT_TYPE actionOld = 0.0f;
+    FLOAT_TYPE actionOld = 0.0;
     for (int i = 1; i < %(2_POW_S)s; i++)
     {
         for (int degree = 0; degree < %(DOF)s; degree++)
@@ -227,26 +234,26 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
                 FLOAT_TYPE v = randFloat(seedPtr);
                 FLOAT_TYPE rz;
                 // Corner case if randFloat gives a zero.
-                if (v == 0.0f)
+                if (v == 0.0)
                 {
-                    rz = 0.0f;
+                    rz = 0.0;
                 }
                 else
                 {
-                    rz = sigmaN[n] * native_sqrt (-2.0f * log (v))
-                        * native_sin (2.0f * %(PI)s * u);
+                    rz = sigmaN[n] * native_sqrt (-2.0 * log (v))
+                        * native_sin (2.0 * %(PI)s * u);
                 }
 
                 // Do the actual moving of node by averaging nodes to right and left
                 // and use a normally distributed offset z.
-                path[pointMoved + Ndegree] = 0.5f * (path[pointLeft + Ndegree] +
+                path[pointMoved + Ndegree] = 0.5 * (path[pointLeft + Ndegree] +
                                                      path[pointRight + Ndegree]) + rz;
             }
         }
     }
 
     // Calculate action for the new path
-    FLOAT_TYPE actionNew = 0.0f;
+    FLOAT_TYPE actionNew = 0.0;
     for (int i = 1; i < %(2_POW_S)s; i++)
     {
         int iCurr = i + startPoint;
@@ -296,10 +303,10 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD FLOAT_TYPE *x, uint degree, FLOAT_TYPE of
 {
     if (left == right)
     {
-        return 0.0f;
+        return 0.0;
     }
-    FLOAT_TYPE kinDiff = 0.0f;
-    FLOAT_TYPE potDiff = 0.0f;
+    FLOAT_TYPE kinDiff = 0.0;
+    FLOAT_TYPE potDiff = 0.0;
     uint leftleft;
     uint rightright;
     PATH_TYPE_KEYWORD FLOAT_TYPE *xMinusNPart = x - %(N)s * degree;
@@ -474,7 +481,7 @@ metropolis (__global FLOAT_TYPE *paths
     for (int i = 1; i <= %(S)s; i++)
     {
         twoPow[i] = twoPow[i - 1] * 2;
-        sigmaN[i] = sqrt (((FLOAT_TYPE) Ns * %(epsilon)s / (2.0f * (FLOAT_TYPE) twoPow[i])));
+        sigmaN[i] = sqrt (((FLOAT_TYPE) Ns * %(epsilon)s / (2.0 * (FLOAT_TYPE) twoPow[i])));
     }
 #endif
 
@@ -505,7 +512,7 @@ metropolis (__global FLOAT_TYPE *paths
             xorshift (&seedG);
             uint right = seedG.w & mask;
             FLOAT_TYPE offset =
-                %(PSAlpha)s * (2.0f * randFloat (&seed) - 1.0f);
+                %(PSAlpha)s * (2.0 * randFloat (&seed) - 1.0);
 
             // Revert path shift if rejected by Metropolis step
             if (exp (-%(epsilon)s *  shiftPathEnergyDiff (local_path + (%(N)s * degree),
@@ -537,7 +544,7 @@ metropolis (__global FLOAT_TYPE *paths
             }
 
             FLOAT_TYPE oldX = local_path[modPathPoint];
-            FLOAT_TYPE modX = oldX + (2.0f *randFloat(&seed)-1.0f)*%(alpha)s;
+            FLOAT_TYPE modX = oldX + (2.0 *randFloat(&seed)-1.0)*%(alpha)s;
 
             //Calculate the difference in energy (action) for the new path
             //compared to the old, stored in diffE.

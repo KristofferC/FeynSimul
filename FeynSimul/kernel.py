@@ -334,9 +334,13 @@ class PIMCKernel:
         self._queue = cl.CommandQueue(self._ctx,
                                            properties=queueProperties)
 
+        programBuildOptions = "-cl-fast-relaxed-math"
+        if not self._enableDouble:
+            programBuildOptions += " -cl-single-precision-constant"
+
         #Build the program and identify metropolis as the kernel
         self._prg = (cl.Program(self._ctx, kernelCode)
-                         .build(options="-cl-fast-relaxed-math"))
+                         .build(options=programBuildOptions))
         self._kernel = self._prg.metropolis
 
         #Initial paths are created (the initial path vector is filled with zeros,
