@@ -90,8 +90,8 @@ class PIMCKernel:
         if self._enableOperator:
             self._operators = ka.operators
         if self._operatorRuns == None:
-                raise NameError('operatorRuns need to be set if enableOperator'
-                                ' is True.')
+            raise NameError('operatorRuns need to be set if enableOperator'
+                            ' is True.')
         if self._operators == None:
             raise NameError('operators need to be set if enableOperator'
                             ' is True.')
@@ -99,7 +99,7 @@ class PIMCKernel:
             raise NameError('metroStepsPerOperatorRun need to be set'
                             ' if enableOperator is True.')
         if not isinstance(self._operators, tuple):
-                raise TypeError('operators need to be a tuple of strings.')
+            raise TypeError('operators need to be a tuple of strings.')
 
 
         if self._enableCorrelator:
@@ -107,8 +107,8 @@ class PIMCKernel:
         if self._correlators == None:
             raise NameError('correlators need to be set if enableCorrelator'
                             ' is True.')
-            if not isinstance(self._correlators, tuple):
-                raise TypeError('correlators need to be a tuple of strings.')
+        if not isinstance(self._correlators, tuple):
+            raise TypeError('correlators need to be a tuple of strings.')
 
 
         if self._enableSingleNodeMove:
@@ -139,7 +139,7 @@ class PIMCKernel:
 
 
         if not (self._nbrOfWalkers / self._nbrOfWalkersPerWorkGroup *
-               self._nbrOfWalkersPerWorkGroup == self._nbrOfWalkers):
+                self._nbrOfWalkersPerWorkGroup == self._nbrOfWalkers):
             raise Exception("The number of walkers must be a multiple "
                             "of the number of walkers per work group.")
 
