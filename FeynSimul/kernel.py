@@ -84,12 +84,12 @@ class PIMCKernel:
 
 
         # Do some checking of run parameters.
-	if not isinstance(self._beta, float):
-		raise TypeError('beta need to be a float')
+        if not isinstance(self._beta, float):
+            raise TypeError('beta need to be a float')
 
         if self._enableOperator:
             self._operators = ka.operators
-	    if self._operatorRuns == None:
+        if self._operatorRuns == None:
                 raise NameError('operatorRuns need to be set if enableOperator'
                                 ' is True.')
             if self._operators == None:
@@ -98,15 +98,15 @@ class PIMCKernel:
             if self._metroStepsPerOperatorRun == None:
                 raise NameError('metroStepsPerOperatorRun need to be set'
                                 ' if enableOperator is True.')
-	    if not isinstance(self._operators, tuple):
+        if not isinstance(self._operators, tuple):
                 raise TypeError('operators need to be a tuple of strings.')
 
 
         if self._enableCorrelator:
             self._correlators = ka.correlators
-	    if self._correlators == None:
-	  	  raise NameError('correlators need to be set if enableCorrelator'
-                           	  ' is True.')
+        if self._correlators == None:
+            raise NameError('correlators need to be set if enableCorrelator'
+                                 ' is True.')
             if not isinstance(self._correlators, tuple):
                 raise TypeError('correlators need to be a tuple of strings.')
 
@@ -152,8 +152,8 @@ class PIMCKernel:
 
         if self._enableBisection:
             if self._S == None:
-		raise NameError('S need to be set if enableBisection'
-				' is True')
+        raise NameError('S need to be set if enableBisection'
+                ' is True')
             if 2 ** self._S > self._N:
                 raise Exception("2^S must be less than or equal to N.")
             if self._enableGlobalPath == None:
@@ -187,6 +187,8 @@ class PIMCKernel:
             self._globalSize = (self._nbrOfWalkers,)
             self._nbrOfThreads = self._nbrOfWalkers
 
+        # Defines for kernel code, used by the pre-processor to determine what
+        # code to include or discard.
         defines = ""
         
         if self._enableDouble:
@@ -244,7 +246,7 @@ class PIMCKernel:
                                  + self._operators[i] + ";\n")
                 if i != 0:
                     nbrOfOperatorsZeros += ","
-                nbrOfOperatorsZeros += "0.0f"
+                nbrOfOperatorsZeros += "0.0"
 
         if self._enableCorrelator:
             correlatorCode = ""
@@ -254,7 +256,7 @@ class PIMCKernel:
                                    + self._correlators[i] + ";\n")
                 if i != 0:
                     nbrOfCorrelatorsOnes += ","
-                nbrOfCorrelatorsOnes += "1.0f"
+                nbrOfCorrelatorsOnes += "1.0"
 
         class DictWithDefault(defaultdict):
             def __missing__(self, key):

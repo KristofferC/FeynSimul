@@ -175,7 +175,7 @@ class KernelArgs:
      
 
         self.operatorRuns = operatorRuns
-	self.operators = operators
+        self.operators = operators
         self.metroStepsPerOperatorRun = metroStepsPerOperatorRun
 
         self.enableCorrelator = enableCorrelator
