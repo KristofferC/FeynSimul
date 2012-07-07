@@ -92,12 +92,12 @@ class PIMCKernel:
         if self._operatorRuns == None:
                 raise NameError('operatorRuns need to be set if enableOperator'
                                 ' is True.')
-            if self._operators == None:
-                raise NameError('operators need to be set if enableOperator'
-                                ' is True.')
-            if self._metroStepsPerOperatorRun == None:
-                raise NameError('metroStepsPerOperatorRun need to be set'
-                                ' if enableOperator is True.')
+        if self._operators == None:
+            raise NameError('operators need to be set if enableOperator'
+                            ' is True.')
+        if self._metroStepsPerOperatorRun == None:
+            raise NameError('metroStepsPerOperatorRun need to be set'
+                            ' if enableOperator is True.')
         if not isinstance(self._operators, tuple):
                 raise TypeError('operators need to be a tuple of strings.')
 
@@ -106,7 +106,7 @@ class PIMCKernel:
             self._correlators = ka.correlators
         if self._correlators == None:
             raise NameError('correlators need to be set if enableCorrelator'
-                                 ' is True.')
+                            ' is True.')
             if not isinstance(self._correlators, tuple):
                 raise TypeError('correlators need to be a tuple of strings.')
 
@@ -152,8 +152,8 @@ class PIMCKernel:
 
         if self._enableBisection:
             if self._S == None:
-        raise NameError('S need to be set if enableBisection'
-                ' is True')
+                raise NameError('S need to be set if enableBisection'
+                                ' is True')
             if 2 ** self._S > self._N:
                 raise Exception("2^S must be less than or equal to N.")
             if self._enableGlobalPath == None:
