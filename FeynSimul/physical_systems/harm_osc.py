@@ -28,7 +28,7 @@ class HarmOsc:
         self.potential = "0.5 * " + str(k) + " * x1 * x1"
         if lb:
             self.potential = "0.5 * (1.0 + sqr(eps)/12.0)*sqr(x1)"
-        self.userCode = "float sqr(float x){return x*x;}" 
+        self.userCode = "FLOAT_TYPE sqr(FLOAT_TYPE x){return x*x;}" 
         self.energyOp = str(k) + " * x1 * x1"
         if lb:
             self.energyOp = "2.0 * 0.5*(1.0 + sqr(eps)/4.0)*sqr(x1)"
