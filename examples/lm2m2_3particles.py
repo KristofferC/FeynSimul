@@ -38,6 +38,7 @@ ka = KernelArgs(nbrOfWalkers = 64,
                 enableGlobalOldPath = True,
                 enableParallelizePath = True,
                 enableBins = False,
+                enableDouble = False,
                 beta = 1000.0,
                 nbrOfWalkersPerWorkGroup = 4,
                 operatorRuns = 100,
@@ -69,5 +70,5 @@ startXList=np.random.uniform(size=(ka.nbrOfWalkers,ka.system.DOF)
 
 # Run the simulation function
 modN(ka, startXList, savePathsInterval, "lm2m2_3part", opRunsFormula
-     , mStepsPerOPRun,  runsPerN, 512, runTime=endTime, finalN=1024*64,
+     , mStepsPerOPRun,  runsPerN, 512, simTime=endTime, finalN=1024*64,
      verbose=True)
