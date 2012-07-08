@@ -240,7 +240,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
                 }
                 else
                 {
-                    rz = sigmaN[n] * native_sqrt (-2.0 * log (v))
+                    rz = sigmaN[n] * native_sqrt (-2.0 * native_log (v))
                         * native_sin (2.0 * %(PI)s * u);
                 }
 
