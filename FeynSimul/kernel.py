@@ -269,8 +269,8 @@ class PIMCKernel:
         replacements['nbrOfWalkersPerWorkGroup'] = self._nbrOfWalkersPerWorkGroup
         replacements['N'] = '%d' % self._N
         replacements['potential'] = self._system.potential
-        replacements['epsilon'] = '%ef' % (self._beta / float(self._N))
-        replacements['epsilon_inv2'] = '%ef' % ((float(self._N) / self._beta) ** 2)
+        replacements['epsilon'] = '%1.17e' % (self._beta / float(self._N))
+        replacements['epsilon_inv2'] = '%1.17e' % ((float(self._N) / self._beta) ** 2)
         replacements['pathSize'] = '%d' % (self._system.DOF * self._N)
         replacements['defines'] = defines
         replacements['userCode'] = self._system.userCode
@@ -283,7 +283,7 @@ class PIMCKernel:
             replacements['operatorCode'] = operatorCode
             replacements['nbrOfOperators'] = '%d' % len(self._operators)
             replacements['nbrOfOperatorsZeros'] = nbrOfOperatorsZeros
-            replacements['opNorm'] = '%ef' % (1.0 / float(self._operatorRuns
+            replacements['opNorm'] = '%1.17e' % (1.0 / float(self._operatorRuns
                          * self._N * self._nbrOfWalkers / self._nbrOfThreads))
 
         if self._enableCorrelator:
@@ -292,22 +292,22 @@ class PIMCKernel:
             replacements['nbrOfCorrelatorsOnes'] = nbrOfCorrelatorsOnes
 
         if self._enableBisection:
-            replacements['PI'] = '%ef' % 3.141592653589793
+            replacements['PI'] = '%1.17e' % 3.1415926535897932384626433832795
             replacements['2_POW_S'] = '%d' % 2 ** self._S
             replacements['S'] = '%d' % self._S
 
         if self._enableSingleNodeMove:
-            replacements['alpha'] = '%ef' % self._alpha
+            replacements['alpha'] = '%1.17e' % self._alpha
 
         if self._enablePathShift:
-            replacements['PSAlpha'] = '%ef' % self._PSAlpha
+            replacements['PSAlpha'] = '%1.17e' % self._PSAlpha
 
         if self._enableBins:
-            replacements['xMin'] = '%ef' % self._xMin
-            replacements['xMax'] = '%ef' % self._xMax
+            replacements['xMin'] = '%1.17e' % self._xMin
+            replacements['xMax'] = '%1.17e' % self._xMax
             replacements['binsPerPart'] = '%d' % self._binResolutionPerDOF
             replacements['nbrOfBins'] = '%d' % self._binResolutionPerDOF ** self._system.DOF
-            replacements['invBinSize'] = '%ef' % (float(self._binResolutionPerDOF) /
+            replacements['invBinSize'] = '%1.17e' % (float(self._binResolutionPerDOF) /
                                          float(self._xMax - self._xMin))
             
 
