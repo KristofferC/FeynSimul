@@ -226,7 +226,7 @@ class PIMCKernel:
 
         defines += "#define DOF_ARGUMENT_DECL "
         for i in range(self._system.DOF):
-            defines += "float x" + str(i + 1)
+            defines += "FLOAT_TYPE x" + str(i + 1)
             if (i != self._system.DOF - 1):
                 defines += ","
         defines += "\n"
@@ -374,7 +374,7 @@ class PIMCKernel:
                 #the calculated operator means from each thread
                 self._correlatorValues = cl.array.zeros(self._queue,
                         (self._nbrOfWalkers, len(self._correlators), self._N / 2),
-                        np.float32)
+                        np.float64 if self._enableDouble else np.float32)
 
             if self._enableGlobalOldPath:
                 self._oldPath = cl.array.zeros(self._queue,
