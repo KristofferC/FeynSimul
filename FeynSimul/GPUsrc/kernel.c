@@ -240,8 +240,8 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
                 }
                 else
                 {
-                    rz = sigmaN[n] * native_sqrt (-2.0 * native_log (v))
-                        * native_sin (2.0 * %(PI)s * u);
+                    rz = sigmaN[n] * sqrt (-2.0 * log (v))
+                        * sin (2.0 * %(PI)s * u);
                 }
 
                 // Do the actual moving of node by averaging nodes to right and left
