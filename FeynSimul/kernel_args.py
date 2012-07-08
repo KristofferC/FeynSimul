@@ -31,8 +31,8 @@ class KernelArgs:
                  enablePathShift,
                  enableSingleNodeMove,
                  enableBins,
-                 enableDouble=None,
                  nbrOfWalkersPerWorkGroup,
+                 enableDouble=None,
                  S=None,
                  alpha=None,
                  PSAlpha=None,
@@ -89,16 +89,16 @@ class KernelArgs:
         :type enableBins: boolean
         :param enableBins: Determines if the simulation should do calculations
                            on the probability density of the system.
-                                    
-        :type enableDouble: boolean
-        :param enableDouble: Determine if double or single precision is to be
-                             used for floats on the GPU. Default is single
-                             precision.
 
         :type nbrOfWalkersPerWorkGroup: int
         :param nbrOfWalkersPerWorkGroup: Determines how many of the simulations 
                                          should be launched in one OpenCL 
                                          workgroup.
+                                    
+        :type enableDouble: boolean
+        :param enableDouble: Determine if double or single precision is to be
+                             used for floats on the GPU. Default is single
+                             precision.
 
         :type S: int 
         :param S: Parameter to the bisection sampling algorithm. 2 ** S is the
