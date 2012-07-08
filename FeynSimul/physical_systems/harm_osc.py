@@ -25,11 +25,11 @@ class HarmOsc:
         @param k: The spring constant of the harmonic ocsillator.
 
         """
-        self.potential = "0.5f * " + str(k) + "f * x1 * x1"
+        self.potential = "0.5 * " + str(k) + " * x1 * x1"
         if lb:
-            self.potential = "0.5f * (1.0f + sqr(eps)/12.0f)*sqr(x1)"
+            self.potential = "0.5 * (1.0 + sqr(eps)/12.0)*sqr(x1)"
         self.userCode = "float sqr(float x){return x*x;}" 
-        self.energyOp = str(k) + "f * x1 * x1"
+        self.energyOp = str(k) + " * x1 * x1"
         if lb:
-            self.energyOp = "2.0f * 0.5f*(1.0f + sqr(eps)/4.0f)*sqr(x1)"
+            self.energyOp = "2.0 * 0.5*(1.0 + sqr(eps)/4.0)*sqr(x1)"
         self.DOF = 1

@@ -31,8 +31,8 @@ class KernelArgs:
                  enablePathShift,
                  enableSingleNodeMove,
                  enableBins,
-                 nbrOfWalkersPerWorkGroup,
                  enableDouble=None,
+                 nbrOfWalkersPerWorkGroup,
                  S=None,
                  alpha=None,
                  PSAlpha=None,
@@ -89,6 +89,11 @@ class KernelArgs:
         :type enableBins: boolean
         :param enableBins: Determines if the simulation should do calculations
                            on the probability density of the system.
+                                    
+        :type enableDouble: boolean
+        :param enableDouble: Determine if double or single precision is to be
+                             used for floats on the GPU. Default is single
+                             precision.
 
         :type nbrOfWalkersPerWorkGroup: int
         :param nbrOfWalkersPerWorkGroup: Determines how many of the simulations 
@@ -153,11 +158,6 @@ class KernelArgs:
                                     do`e for the probability density calculations.
                                     The total number of sub cubes are
                                     binResolutionPerDOF ** DOF.
-                                    
-        :type enableDouble: boolean
-        :param enableDouble: Determine if double or single precision is to be
-                             used for floats on the GPU. Default is single
-                             precision.
 	"""
         self.system = system
         self.nbrOfWalkers = nbrOfWalkers
@@ -166,6 +166,7 @@ class KernelArgs:
         self.beta = beta
         self.nbrOfWalkersPerWorkGroup = nbrOfWalkersPerWorkGroup
         self.enablePathShift = enablePathShift
+        self.enableDouble = enableDouble
 
         self.enableSingleNodeMove = enableSingleNodeMove
        
@@ -194,5 +195,4 @@ class KernelArgs:
         self.enableParallelizePath = enableParallelizePath
         self.enableGlobalPath = enableGlobalPath
         self.enableGlobalOldPath = enableGlobalOldPath
-        self.enableDouble = enableDouble
 
