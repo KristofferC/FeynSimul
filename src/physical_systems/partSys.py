@@ -1,4 +1,4 @@
-# x=particle positions, interactions is a list of two body interactions, three
+﻿# x=particle positions, interactions is a list of two body interactions, three
 # body interactions, ... . All expressed in relevant squared hyperradii.
 def getHyperRadialPotential(x,distFun,interactions):
     _sum = lambda a: reduce(lambda b,c:b+c,a) #stupid python sum adds a zero
@@ -14,12 +14,14 @@ def getHyperRadialPotential(x,distFun,interactions):
 
 #just some testing of this code. It should be able to take any objects as x,
 #interactions must return objects that together can be operands to +.
-import sympy
-n=4;
+'''import sympy
+n=4
 d=2
-x=[sympy.Matrix([sympy.symbols('x'+str(i)), sympy.symbols('y'+str(i))]) for i in range(n)]
+x=[sympy.Matrix([sympy.symbols(['x'+str(i)]), sympy.symbols(['y'+str(i)])]) for i in range(n)]
 m=[sympy.symbols('m')]*n
-f=[(lambda shr,i=i:sympy.symbols('f'+str(i))(shr)) for i in range(n-1)]
+f=[(lambda shr,i=i:sympy.symbols(['f'+str(i)])(shr)) for i in range(n-1)]
+#f=[sympy.symbols('f')]
 print(f)
-sympy.pprint( getHyperRadialPotential(x,lambda
-    a,b:((a-b).transpose()*(a-b))[0],f).simplify())
+sympy.pprint(x[0].transpose()*(x[1]))
+sympy.pprint( sympy.simplify(getHyperRadialPotential(x,lambda
+    a,b:((a-b).transpose()*(a-b))[0],f)))'''
