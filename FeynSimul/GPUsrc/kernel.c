@@ -66,6 +66,25 @@
 
 
 //##############################################################################
+//#                           RANLUX initialization                            #
+//##############################################################################
+#ifdef ENABLE_RANLUX
+    #define RANLUXCL_LUX %(luxuaryFactor)d
+    
+    
+    #ifdef ENABLE_DOUBLE
+        #define RANLUXCL_SUPPORT_DOUBLE
+        #define RAND_FUNCTION
+    #else
+        #define RAND_FUNCTION 
+    #endif
+    
+    #include "ranlux.cl"
+#else
+    #define RAND_FUNCTION randFloat
+#endif
+
+//##############################################################################
 //#                                 userCode                                   #
 //##############################################################################
 //Description: This is a placeholder for code that the user can write to help
@@ -128,13 +147,14 @@ inline void xorshift (uint4 *seedPtr)
 //##############################################################################
 //Description: This returns a random floating point number by dividing w with
 //             UINT32_MAX (hardcoded).
+#ifndef ENABLE_RANLUX
 inline FLOAT_TYPE
 randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
 }
-
+#endif
 
 //##############################################################################
 //#                                kinEnergyEst                                #

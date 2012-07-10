@@ -74,6 +74,8 @@ class PIMCKernel:
         self._enableDouble = ka.enableDouble
         self._nbrOfWalkers = ka.nbrOfWalkers
         self._nbrOfWalkersPerWorkGroup = ka.nbrOfWalkersPerWorkGroup
+        self._enableRanlux = ka.enableRanlux
+        self._luxuaryFactor = ka.luxuaryFactor
         self._N = ka.N
         self._S = ka.S
         self._beta = ka.beta
@@ -122,6 +124,15 @@ class PIMCKernel:
             if self._PSAlpha == None:
                 raise NameError('PSALpha need to be set if enablePathShift'
                                 ' is True')
+
+        if self._enableRanlux:
+            if self._luxuaryFactor == None or self._luxuaryFactor < 0:
+                raise NameError('luxuaryFactor needs to be an integer > 0.')
+            else:
+                try:
+                    self._luxuaryFactor += 1
+                except TypeError:
+                    raise NameError('luxuaryFactor needs to be an integer > 0.')
 
         if self._enableBins:
             self._binResolutionPerDOF = ka.binResolutionPerDOF
@@ -214,6 +225,9 @@ class PIMCKernel:
 
         if self._enableGlobalPath:
             defines += "#define ENABLE_GLOBAL_PATH\n"
+            
+        if self._enableRanlux:
+            defines += "#define ENABLE_RANLUX\n"
 
         if self._enableGlobalOldPath:
             if not self._enableBisection:
@@ -301,6 +315,9 @@ class PIMCKernel:
 
         if self._enablePathShift:
             replacements['PSAlpha'] = '%1.17e' % self._PSAlpha
+
+        if self._enableRanlux:
+            replacements['luxuaryFactor'] = '%d' % self._luxuaryFactor
 
         if self._enableBins:
             replacements['xMin'] = '%1.17e' % self._xMin
