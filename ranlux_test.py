@@ -2,6 +2,15 @@
 
 import numpy as np
 import pyopencl as cl
+from time import time
+from collections import defaultdict
+import os
+import copy
+
+import pyopencl as cl
+import pyopencl.array
+import pyopencl.clrandom
+import pyopencl.clmath
 
 luxuaryFactor = 0
 enableDouble = False
@@ -19,8 +28,13 @@ programBuildOptions = "-cl-fast-relaxed-math"
 if enableDouble:
     defines += "#define ENABLE_DOUBLE\n"
 else:
-programBuildOptions += "-cl-single-precision-constant"
+    programBuildOptions += " -cl-single-precision-constant"
 
+class DictWithDefault(defaultdict):
+    def __missing__(self, key):
+        return key + str(" is not defined")
+        
+replacements = DictWithDefault()
 replacements['defines'] = defines
 replacements['luxuaryFactor'] = luxuaryFactor
 replacements['randsPerThread'] = randsPerThread

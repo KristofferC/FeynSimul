@@ -12,7 +12,7 @@
     #define FLOAT_TYPE float
 #endif
 
-#include "ranluxcl.cl"
+#include "pyopencl-ranluxcl.cl"
 __kernel void Kernel_Ranluxcl_Init(__private uint ins,
 __global ranluxcl_state_t *ranluxcltab)
 {
