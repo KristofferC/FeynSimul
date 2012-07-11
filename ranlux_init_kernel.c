@@ -13,7 +13,7 @@
 #endif
 
 #include "pyopencl-ranluxcl.cl"
-__kernel void Kernel_Ranluxcl_Init(__private uint ins,
+__kernel void ranlux_init_kernel(__private uint ins,
 __global ranluxcl_state_t *ranluxcltab)
 {
     ranluxcl_initialization(ins, ranluxcltab);

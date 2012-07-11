@@ -48,7 +48,7 @@ initKernelCode = initKernelCode_r % replacements
 
 ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads, 28))).astype(np.uint32))
 prg = (cl.Program(ctx, initKernelCode).build(options=programBuildOptions))
-kernel = prg.ranlux_test_kernel
+kernel = prg.ranlux_init_kernel
 
 kernelObj = kernel(queue, globalSize, localSize, ins.data)
 kernelObj.wait()
