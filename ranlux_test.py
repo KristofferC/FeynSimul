@@ -3,44 +3,41 @@
 import numpy as np
 import pyopencl as cl
 
-def humanReadableSize(size):
-    """
-    Converts a size in bytes to human readable form.
-
-    :param number size: Size in bytes to convert
-
-    :rtype: string
-    :returns: The size in human readable form.
-    """
-    if size <= 0 or size >= 10e18:
-        return "%.3g" % size + " B"
-    else:
-        p = int(np.log(size) / np.log(1024))
-        names = ["", "ki", "Mi", "Gi", "Ti", "Pi", "Ei"]
-        return "%.3g" % (size / 1024.0 ** p) + " " + names[p] + "B"
-
 luxuaryFactor = 0
 enableDouble = False
-nbrOfWalkers = 448
+nbrOfWalkers = 448*32
 N = 128
 localSize = None
 globalSize = nbrOfWalkers
 nbrOfThreads = nbrOfWalkers
-numbersPerThread = 1000
+randsPerThread = 100
 
 defines = ""
 
+programBuildOptions = "-cl-fast-relaxed-math"
+
 if enableDouble:
     defines += "#define ENABLE_DOUBLE\n"
+else:
+programBuildOptions += "-cl-single-precision-constant"
 
-replacements['luxuaryFactor'] = luxuaryFactor
 replacements['defines'] = defines
+replacements['luxuaryFactor'] = luxuaryFactor
+replacements['randsPerThread'] = randsPerThread
 
 ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
 queue = cl.CommandQueue(ctx, properties=queueProperties)
 
-programBuildOptions = "-cl-fast-relaxed-math -cl-single-precision-constant"
+initKernelCode_r = open(os.path.dirname(__file__) + 'ranlux_init_kernel.c', 'r').read()
+initKernelCode = initKernelCode_r % replacements
+
+ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads, 28))).astype(np.uint32))
+prg = (cl.Program(ctx, initKernelCode).build(options=programBuildOptions))
+kernel = prg.ranlux_test_kernel
+
+kernelObj = kernel(queue, globalSize, localSize, ins.data)
+kernelObj.wait()
 
 kernelCode_r = open(os.path.dirname(__file__) + 'ranlux_test_kernel.c', 'r').read()
 kernelCode = kernelCode_r % replacements
@@ -48,36 +45,11 @@ kernelCode = kernelCode_r % replacements
 prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 kernel = prg.ranlux_test_kernel
 
-randomNumbers = cl.array.zeros(queue, nbrOfThreads, np.float64 if enableDouble else np.float32)
+ranluxcltab = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
 
-kernelObj = kernel(queue, globalSize, localSize, randomNumbers.data)
+kernelObj = kernel(queue, globalSize, localSize, ranluxcltab.data)
 kernelObj.wait()
 
 
-resultingNumbers = randomNumbers.get()
-
-
-
-
-
-
-ret = ""
-devices = prg.get_info(cl.program_info.DEVICES)
-if len(devices) != 1:
-    raise Exception("Expected the number of " +
-                    "devices to be 1, it was " + str(len(devices)))
-dev = devices[0]
-ret += ("Global memory (used/max): " +
-        humanReadableSize(getGlobalMemory()) + " / " +
-        humanReadableSize(dev.get_info(cl.device_info.GLOBAL_MEM_SIZE))
-        + "\n")
-
-ret += ("Local memory (used/max): " +
-    humanReadableSize(prg.ranlux_test_kernel.get_work_group_info(
-                        cl.kernel_work_group_info.LOCAL_MEM_SIZE, dev))
-                        + " / " +
-                        humanReadableSize(
-                        dev.get_info(cl.device_info.LOCAL_MEM_SIZE))
-                        + "\n")
-print ret
+resultingNumbers = ranluxcltab.get()
 
