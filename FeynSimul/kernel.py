@@ -547,10 +547,9 @@ class PIMCKernel:
             _numBytes = 8
         else:
             _numBytes = 4
-        
         usedGlobalMemory = 0
-        usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * _numBytes  # seeds
-        usedGlobalMemory += (self._nbrOfThreads) * _numBytes  # accepts
+        usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
+        usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers * self._N *
                              self._system.DOF * _numBytes)  # path
         usedGlobalMemory += (self._nbrOfThreads
@@ -561,7 +560,7 @@ class PIMCKernel:
                                  * self._system.DOF * _numBytes)
         if self._enableBins:
             usedGlobalMemory += (self._binResolutionPerDOF **
-                                self._system.DOF * _numBytes)
+                                self._system.DOF * 4)
         return usedGlobalMemory
 
     def getStats(self):
