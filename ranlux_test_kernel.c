@@ -15,7 +15,7 @@
 #include "pyopencl-ranlux.cl"
 
 __kernel void ranlux_init_kernel(__private uint ins,
-__global ranluxcl_state_t *ranluxcltab)
+                                 __global ranluxcl_state_t *ranluxcltab)
 {
     ranluxcl_initialization(ins, ranluxcltab);
 }
