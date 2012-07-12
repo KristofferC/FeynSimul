@@ -42,11 +42,14 @@ replacements['randsPerThread'] = randsPerThread
 ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
 queue = cl.CommandQueue(ctx, properties=queueProperties)
+mf = cl.mem_flags
 
 #initKernelCode_r = open(os.path.dirname(__file__) + 'ranlux_init_kernel.c', 'r').read()
 #initKernelCode = initKernelCode_r % replacements
+dummyBuffer = np.zeros(nbrOfThreads * 28, dtype=np.uint32)
 
-ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads, 28))).astype(np.uint32))
+ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads))).astype(np.uint32))
+ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
 #prg = (cl.Program(ctx, initKernelCode).build(options=programBuildOptions))
 #kernel = prg.ranlux_init_kernel
 

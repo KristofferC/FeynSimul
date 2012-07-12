@@ -23,6 +23,8 @@ __global ranluxcl_state_t *ranluxcltab)
 __kernel void ranlux_test_kernel(__global FLOAT_TYPE *randomsOut,
                                  __global ranluxcl_state_t *ranluxcltab)
 {
+    uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
+    
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
 
@@ -32,8 +34,20 @@ __kernel void ranlux_test_kernel(__global FLOAT_TYPE *randomsOut,
     //Generate a float4 with each component on (0,1),
     //end points not included. We can call ranluxcl as many
     //times as we like until we upload the state again.
-    float4 randomnr = ranluxcl32(&ranluxclstate);
-
+    float4 randomnr;
+    uint randOffset;
+    uint randLocalOffset = threadId * %(ramdsPerThread)d;
+    
+    for (int i = 0; i <= %(randsPerThread)d; i++)
+    {
+        randOffset = randLocalOffset + 4 * i;
+        randomnr = ranluxcl32(&ranluxclstate);
+        randomsOut[randOffset + 0] = randomnr.x;
+        randomsOut[randOffset + 1] = randomnr.y;
+        randomsOut[randOffset + 2] = randomnr.z;
+        randomsOut[randOffset + 3] = randomnr.w;
+    }
+    
     //Upload state again so that we don't get the same
     //numbers over again the next time we use ranluxcl.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
