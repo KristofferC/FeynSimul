@@ -14,7 +14,14 @@
 
 #include "pyopencl-ranlux.cl"
 
-__kernel void ranlux_test_kernel(__global ranluxcl_state_t *ranluxcltab)
+__kernel void ranlux_init_kernel(__private uint ins,
+__global ranluxcl_state_t *ranluxcltab)
+{
+    ranluxcl_initialization(ins, ranluxcltab);
+}
+
+__kernel void ranlux_test_kernel(__global FLOAT_TYPE *randomsOut,
+                                 __global ranluxcl_state_t *ranluxcltab)
 {
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
