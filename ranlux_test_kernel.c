@@ -1,7 +1,7 @@
 
 %(defines)s
 
-#define RANLUXCL_LUX %(luxuaryFactor)d
+#define RANLUXCL_LUX %(luxuaryFactor)s
 
 
 #ifdef ENABLE_DOUBLE
@@ -36,9 +36,9 @@ __kernel void ranlux_test_kernel(__global FLOAT_TYPE *randomsOut,
     //times as we like until we upload the state again.
     float4 randomnr;
     uint randOffset;
-    uint randLocalOffset = threadId * %(ramdsPerThread)d;
+    uint randLocalOffset = threadId * %(randsPerThread)s;
     
-    for (int i = 0; i <= %(randsPerThread)d; i++)
+    for (int i = 0; i <= %(randsPerThread)s; i++)
     {
         randOffset = randLocalOffset + 4 * i;
         randomnr = ranluxcl32(&ranluxclstate);

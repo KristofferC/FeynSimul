@@ -12,7 +12,7 @@ import pyopencl.array
 import pyopencl.clrandom
 import pyopencl.clmath
 
-luxuaryFactor = 0
+luxuaryFactor = 2
 enableDouble = False
 nbrOfWalkers = 448*32
 N = 128
@@ -36,8 +36,8 @@ class DictWithDefault(defaultdict):
         
 replacements = DictWithDefault()
 replacements['defines'] = defines
-replacements['luxuaryFactor'] = luxuaryFactor
-replacements['randsPerThread'] = randsPerThread
+replacements['luxuaryFactor'] = str(luxuaryFactor)
+replacements['randsPerThread'] = str(randsPerThread)
 
 ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
