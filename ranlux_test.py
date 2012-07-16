@@ -19,7 +19,7 @@ N = 128
 localSize = None
 globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
-randsPerThread = 100 # must be a multiple of 4!
+randsPerThread = 400 # must be a multiple of 4!
 
 defines = ""
 
@@ -68,7 +68,7 @@ kernelObj_1.wait()
 
 kernel_2 = prg.ranlux_test_kernel
 
-randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread * 4, np.float64 if enableDouble else np.float32)
+randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
 
 kernelObj_2 = kernel_2(queue, globalSize, localSize, randomsOut.data, ranluxcltab)
 kernelObj_2.wait()
