@@ -17,9 +17,9 @@ enableDouble = False
 nbrOfWalkers = 448*32
 N = 128
 localSize = None
-globalSize = nbrOfWalkers
+globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
-randsPerThread = 100
+randsPerThread = 100 # must be a multiple of 4!
 
 defines = ""
 
@@ -68,10 +68,32 @@ kernelObj_1.wait()
 
 kernel_2 = prg.ranlux_test_kernel
 
-randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
+randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread * 4, np.float64 if enableDouble else np.float32)
 
 kernelObj_2 = kernel_2(queue, globalSize, localSize, randomsOut.data, ranluxcltab)
 kernelObj_2.wait()
 
-resultingNumbers = ranluxcltab.get()
+resultingNumbers = randomsOut.get()
+
+
+print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
+print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)
+print 'Initiation time: %f' % (1e-9 * (kernelObj_1.profile.end - kernelObj_1.profile.start))
+print 'Run time: %f' % (1e-9 * (kernelObj_2.profile.end - kernelObj_2.profile.start))
+print 'RANLUX luxuary factor: %d' % luxuaryFactor
+if enableDouble:
+    print 'Float precision: double'
+else:
+    print 'Float precision: single'
+print 'Mean: %f' % np.mean(resultingNumbers)
+print 'Standard deviation: %f' % np.std(resultingNumbers)
+
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
+
+
+# the histogram of the data
+n, bins, patches = plt.hist(resultingNumbers, 50, normed=1)
+
+plt.show()
 
