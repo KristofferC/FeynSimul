@@ -16,6 +16,7 @@ luxuaryFactor = 2
 enableDouble = False
 enablePlot = False
 printKernelCode = True
+returnRandoms = True
 nbrOfWalkers = 448*32
 N = 128
 localSize = None
@@ -31,6 +32,9 @@ if enableDouble:
     defines += "#define ENABLE_DOUBLE\n"
 else:
     programBuildOptions += " -cl-single-precision-constant"
+
+if returnRandoms:
+    defines += "#define RETURN_RANDOMS\n"
 
 class DictWithDefault(defaultdict):
     def __missing__(self, key):
@@ -75,12 +79,16 @@ prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 
 kernel = prg.ranlux_test_kernel
 
-randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
+if returnRandoms:
+    randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
+    kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
+else:
+    kernelObj = kernel(queue, globalSize, localSize, ins.data, ranluxcltab)
 
-kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
 kernelObj.wait()
 
-resultingNumbers = randomsOut.get()
+if returnRandoms:
+    resultingNumbers = randomsOut.get()
 
 
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
@@ -92,10 +100,11 @@ if enableDouble:
     print 'Float precision: double'
 else:
     print 'Float precision: single'
-print 'Mean: %f' % np.mean(resultingNumbers)
-print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers), (1.0/np.sqrt(12)))
+if returnRandoms:
+    print 'Mean: %f' % np.mean(resultingNumbers, dtype=np.float64)
+    print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers, dtype=np.float64), (1.0/np.sqrt(12)))
 
-if enablePlot:
+if enablePlot and returnRandoms:
     import matplotlib.mlab as mlab
     import matplotlib.pyplot as plt
 

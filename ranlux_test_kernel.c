@@ -36,7 +36,9 @@ randFloat(uint4 *seedPtr)
 }
 
 __kernel void ranlux_test_kernel(__global uint *ins,
+#ifdef RETURN_RANDOMS
                                  __global FLOAT_TYPE *randomsOut,
+#endif
                                  __global ranluxcl_state_t *ranluxcltab)
 {
     ranluxcl_initialization(ins, ranluxcltab);
@@ -68,10 +70,13 @@ __kernel void ranlux_test_kernel(__global uint *ins,
 #else
         randomnr = ranluxcl32(&ranluxclstate);
 #endif
+
+#ifdef RETURN_RANDOMS
         randomsOut[randOffset + 0] = randomnr.x;
         randomsOut[randOffset + 1] = randomnr.y;
         randomsOut[randOffset + 2] = randomnr.z;
         randomsOut[randOffset + 3] = randomnr.w;
+#endif
     }
     
     //Upload state again so that we don't get the same
