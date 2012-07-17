@@ -69,7 +69,7 @@
 //#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)s
+    #define RANLUXCL_LUX %(luxuaryFactor)d
     
     
     #ifdef ENABLE_DOUBLE
@@ -139,7 +139,7 @@ __kernel void ranlux_init_kernel(__global uint *ins,
 {
     ranluxcl_initialization(ins, ranluxcltab);
 }
-#else
+#else // RANLUX NOT ENABLED
 //##############################################################################
 //#                                 XORSHIFT                                   #
 //##############################################################################
@@ -163,7 +163,7 @@ randFloat(uint4 *seedPtr)
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
 }
-#endif
+#endif // End of: RANLUX NOT ENABLED
 
 
 

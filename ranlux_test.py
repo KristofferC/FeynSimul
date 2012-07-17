@@ -14,7 +14,7 @@ import pyopencl.clmath
 
 luxuaryFactor = 2
 enableDouble = False
-enablePlot = True
+enablePlot = False
 printKernelCode = True
 nbrOfWalkers = 448*32
 N = 128
@@ -68,25 +68,25 @@ if printKernelCode:
 
 prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 
-kernel_1 = prg.ranlux_init_kernel
+#kernel_1 = prg.ranlux_init_kernel
 
-kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, ranluxcltab)
-kernelObj_1.wait()
+#kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, ranluxcltab)
+#kernelObj_1.wait()
 
-kernel_2 = prg.ranlux_test_kernel
+kernel = prg.ranlux_test_kernel
 
 randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
 
-kernelObj_2 = kernel_2(queue, globalSize, localSize, randomsOut.data, ranluxcltab)
-kernelObj_2.wait()
+kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
+kernelObj.wait()
 
 resultingNumbers = randomsOut.get()
 
 
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
 print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)
-print 'Initiation time: %f' % (1e-9 * (kernelObj_1.profile.end - kernelObj_1.profile.start))
-print 'Run time: %f' % (1e-9 * (kernelObj_2.profile.end - kernelObj_2.profile.start))
+#print 'Initiation time: %f' % (1e-9 * (kernelObj_1.profile.end - kernelObj_1.profile.start))
+print 'Run time: %f' % (1e-9 * (kernelObj.profile.end - kernelObj.profile.start))
 print 'RANLUX luxuary factor: %d' % luxuaryFactor
 if enableDouble:
     print 'Float precision: double'

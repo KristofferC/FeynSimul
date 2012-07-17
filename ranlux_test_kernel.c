@@ -14,11 +14,11 @@
 
 #include "pyopencl-ranluxcl.cl"
 
-__kernel void ranlux_init_kernel(__global uint *ins,
-                                 __global ranluxcl_state_t *ranluxcltab)
-{
-    ranluxcl_initialization(ins, ranluxcltab);
-}
+//__kernel void ranlux_init_kernel(__global uint *ins,
+//                                 __global ranluxcl_state_t *ranluxcltab)
+//{
+//    ranluxcl_initialization(ins, ranluxcltab);
+//}
 
 inline void xorshift (uint4 *seedPtr)
 {
@@ -35,9 +35,12 @@ randFloat(uint4 *seedPtr)
     return (*seedPtr).w * 2.328306437080797e-10;
 }
 
-__kernel void ranlux_test_kernel(__global FLOAT_TYPE *randomsOut,
+__kernel void ranlux_test_kernel(__global uint *ins,
+                                 __global FLOAT_TYPE *randomsOut,
                                  __global ranluxcl_state_t *ranluxcltab)
 {
+    ranluxcl_initialization(ins, ranluxcltab);
+    
     uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
     
     //ranluxclstate stores the state of the generator.
