@@ -15,14 +15,14 @@ import pyopencl.clmath
 luxuaryFactor = 2
 enableDouble = False
 enablePlot = False
-printKernelCode = True
+printKernelCode = False
 returnRandoms = True
-nbrOfWalkers = 448*32
-N = 128
+enableRanlux = True
+nbrOfWalkers = 448*32*4
 localSize = None
 globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
-randsPerThread = 400 # must be a multiple of 4!
+randsPerThread = 1000 # must be a multiple of 4!
 
 defines = ""
 
@@ -54,7 +54,10 @@ mf = cl.mem_flags
 #initKernelCode = initKernelCode_r % replacements
 dummyBuffer = np.zeros(nbrOfThreads * 28, dtype=np.uint32)
 
-ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads))).astype(np.uint32))
+if enableRanlux:
+    ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads))).astype(np.uint32))
+else:
+    ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads*4))).astype(np.uint32))
 ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
 #prg = (cl.Program(ctx, initKernelCode).build(options=programBuildOptions))
 #kernel = prg.ranlux_init_kernel
@@ -93,9 +96,13 @@ if returnRandoms:
 
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
 print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)
+if enableRanlux:
+    print 'PRNG: RANLUX'
+    print 'RANLUX luxuary factor: %d' % luxuaryFactor
+else:
+    print 'PRNG: xorshift'
 #print 'Initiation time: %f' % (1e-9 * (kernelObj_1.profile.end - kernelObj_1.profile.start))
 print 'Run time: %f' % (1e-9 * (kernelObj.profile.end - kernelObj.profile.start))
-print 'RANLUX luxuary factor: %d' % luxuaryFactor
 if enableDouble:
     print 'Float precision: double'
 else:
