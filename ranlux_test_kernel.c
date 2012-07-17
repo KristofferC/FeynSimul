@@ -20,6 +20,21 @@ __kernel void ranlux_init_kernel(__global uint *ins,
     ranluxcl_initialization(ins, ranluxcltab);
 }
 
+inline void xorshift (uint4 *seedPtr)
+{
+    uint t;
+    t = (*seedPtr).x ^ ((*seedPtr).x << 11);
+    (*seedPtr).xyz=(*seedPtr).yzw;
+    (*seedPtr).w = ((*seedPtr).w ^ ((*seedPtr).w >> 19) ^ (t ^ (t >> 8)));
+}
+
+inline FLOAT_TYPE
+randFloat(uint4 *seedPtr)
+{
+    xorshift(seedPtr);
+    return (*seedPtr).w * 2.328306437080797e-10;
+}
+
 __kernel void ranlux_test_kernel(__global FLOAT_TYPE *randomsOut,
                                  __global ranluxcl_state_t *ranluxcltab)
 {

@@ -14,6 +14,8 @@ import pyopencl.clmath
 
 luxuaryFactor = 2
 enableDouble = False
+enablePlot = True
+printKernelCode = True
 nbrOfWalkers = 448*32
 N = 128
 localSize = None
@@ -59,6 +61,11 @@ ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
 kernelCode_r = open(os.path.dirname(__file__) + 'ranlux_test_kernel.c', 'r').read()
 kernelCode = kernelCode_r % replacements
 
+if printKernelCode:
+    print '-'*20
+    print kernelCode
+    print '-'*20
+
 prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 
 kernel_1 = prg.ranlux_init_kernel
@@ -86,14 +93,15 @@ if enableDouble:
 else:
     print 'Float precision: single'
 print 'Mean: %f' % np.mean(resultingNumbers)
-print 'Standard deviation: %f' % np.std(resultingNumbers)
+print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers), (1.0/np.sqrt(12)))
 
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
+if enablePlot:
+    import matplotlib.mlab as mlab
+    import matplotlib.pyplot as plt
 
 
-# the histogram of the data
-n, bins, patches = plt.hist(resultingNumbers, 50, normed=1)
+    # the histogram of the data
+    n, bins, patches = plt.hist(resultingNumbers, 50, normed=1)
 
-plt.show()
+    plt.show()
 

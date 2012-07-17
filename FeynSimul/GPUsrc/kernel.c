@@ -66,20 +66,20 @@
 
 
 //##############################################################################
-//#                           RANLUX initialization                            #
+//#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)d
+    #define RANLUXCL_LUX %(luxuaryFactor)s
     
     
     #ifdef ENABLE_DOUBLE
         #define RANLUXCL_SUPPORT_DOUBLE
-        #define RAND_FUNCTION
+        #define RAND_FUNCTION ranluxcl64
     #else
-        #define RAND_FUNCTION 
+        #define RAND_FUNCTION ranluxcl32
     #endif
     
-    #include "ranlux.cl"
+    #include "pyopencl-ranluxcl.cl"
 #else
     #define RAND_FUNCTION randFloat
 #endif
@@ -129,6 +129,18 @@ inline FLOAT_TYPE potential(DOF_ARGUMENT_DECL)
 }
 
 //##############################################################################
+//#                             ranlux_init_kernel                             #
+//##############################################################################
+//Description: Used to initialize and warmup the RANLUX PRNG. Run this as a
+//             separate kernel instance before running the main kernel function.
+#ifdef ENABLE_RANLUX
+__kernel void ranlux_init_kernel(__global uint *ins,
+                                 __global ranluxcl_state_t *ranluxcltab)
+{
+    ranluxcl_initialization(ins, ranluxcltab);
+}
+#else
+//##############################################################################
 //#                                 XORSHIFT                                   #
 //##############################################################################
 //Description: This performs the necessary XORs to obtain a new random
@@ -140,14 +152,11 @@ inline void xorshift (uint4 *seedPtr)
     (*seedPtr).xyz=(*seedPtr).yzw;
     (*seedPtr).w = ((*seedPtr).w ^ ((*seedPtr).w >> 19) ^ (t ^ (t >> 8)));
 }
-
-
 //##############################################################################
 //#                               randFloat                                    #
 //##############################################################################
 //Description: This returns a random floating point number by dividing w with
-//             UINT32_MAX (hardcoded).
-#ifndef ENABLE_RANLUX
+//             UINT32_MAX (hardcoded).   
 inline FLOAT_TYPE
 randFloat(uint4 *seedPtr)
 {
@@ -155,6 +164,8 @@ randFloat(uint4 *seedPtr)
     return (*seedPtr).w * 2.328306437080797e-10;
 }
 #endif
+
+
 
 //##############################################################################
 //#                                kinEnergyEst                                #
