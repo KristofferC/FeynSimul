@@ -100,13 +100,13 @@ __kernel void xorshift_test_kernel(__global uint *ins,
     seed.z = ins[threadId * 4 + 2];
     seed.w = ins[threadId * 4 + 3];
 
-    uint randLocalOffset = threadId * %(randsPerThread)s;
+    uint randOffset = threadId * %(randsPerThread)s;
     
     FLOAT_TYPE randomnr;
     
     for (int i = 0; i <= %(randsPerThread)s; i++)
     {
-        randomnr = randFloat (&seed);
+        randomnr = randFloat(&seed);
 #ifdef RETURN_RANDOMS
         randomsOut[randOffset + i] = randomnr;
 #endif
