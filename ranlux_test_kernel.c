@@ -112,8 +112,8 @@ __kernel void xorshift_test_kernel(__global uint *ins,
 #endif
     }
     
-    seeds[threadId * 4] = seed.x;
-    seeds[threadId * 4 + 1] = seed.y;
-    seeds[threadId * 4 + 2] = seed.z;
-    seeds[threadId * 4 + 3] = seed.w;
+    ins[threadId * 4] = seed.x;
+    ins[threadId * 4 + 1] = seed.y;
+    ins[threadId * 4 + 2] = seed.z;
+    ins[threadId * 4 + 3] = seed.w;
 }
