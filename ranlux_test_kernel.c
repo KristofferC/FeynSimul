@@ -88,7 +88,7 @@ __kernel void ranlux_test_kernel(__global uint *ins,
 
 __kernel void xorshift_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
-                                 __global FLOAT_TYPE *randomsOut,
+                                 __global FLOAT_TYPE *randomsOut
 #endif
                                   )
 {
