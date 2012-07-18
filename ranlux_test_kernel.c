@@ -11,10 +11,6 @@
     #define FLOAT_TYPE float
 #endif
 
-#ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)s
-    #include "pyopencl-ranluxcl.cl"
-#endif
 
 //__kernel void ranlux_init_kernel(__global uint *ins,
 //                                 __global ranluxcl_state_t *ranluxcltab)
@@ -22,21 +18,10 @@
 //    ranluxcl_initialization(ins, ranluxcltab);
 //}
 
-inline void xorshift (uint4 *seedPtr)
-{
-    uint t;
-    t = (*seedPtr).x ^ ((*seedPtr).x << 11);
-    (*seedPtr).xyz=(*seedPtr).yzw;
-    (*seedPtr).w = ((*seedPtr).w ^ ((*seedPtr).w >> 19) ^ (t ^ (t >> 8)));
-}
 
-inline FLOAT_TYPE
-randFloat(uint4 *seedPtr)
-{
-    xorshift(seedPtr);
-    return (*seedPtr).w * 2.328306437080797e-10;
-}
-
+#ifdef ENABLE_RANLUX
+#define RANLUXCL_LUX %(luxuaryFactor)s
+#include "pyopencl-ranluxcl.cl"
 __kernel void ranlux_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
                                  __global FLOAT_TYPE *randomsOut,
@@ -85,6 +70,24 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //numbers over again the next time we use ranluxcl.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
 }
+#endif
+
+
+#ifndef ENABLE_RANLUX
+inline void xorshift (uint4 *seedPtr)
+{
+    uint t;
+    t = (*seedPtr).x ^ ((*seedPtr).x << 11);
+    (*seedPtr).xyz=(*seedPtr).yzw;
+    (*seedPtr).w = ((*seedPtr).w ^ ((*seedPtr).w >> 19) ^ (t ^ (t >> 8)));
+}
+
+inline FLOAT_TYPE
+randFloat(uint4 *seedPtr)
+{
+    xorshift(seedPtr);
+    return (*seedPtr).w * 2.328306437080797e-10;
+}
 
 __kernel void xorshift_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
@@ -117,3 +120,4 @@ __kernel void xorshift_test_kernel(__global uint *ins,
     ins[threadId * 4 + 2] = seed.z;
     ins[threadId * 4 + 3] = seed.w;
 }
+#endif
