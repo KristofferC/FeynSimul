@@ -22,7 +22,7 @@ nbrOfWalkers = 448*32*4
 localSize = None
 globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
-randsPerThread = 1000 # must be a multiple of 4!
+randsPerThread = 10000 # must be a multiple of 4!
 
 defines = ""
 
@@ -35,6 +35,9 @@ else:
 
 if returnRandoms:
     defines += "#define RETURN_RANDOMS\n"
+    
+if enableRanlux:
+    defines += "#define ENABLE_RANLUX\n"
 
 class DictWithDefault(defaultdict):
     def __missing__(self, key):
@@ -48,17 +51,17 @@ replacements['randsPerThread'] = str(randsPerThread)
 ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
 queue = cl.CommandQueue(ctx, properties=queueProperties)
-mf = cl.mem_flags
 
 #initKernelCode_r = open(os.path.dirname(__file__) + 'ranlux_init_kernel.c', 'r').read()
 #initKernelCode = initKernelCode_r % replacements
-dummyBuffer = np.zeros(nbrOfThreads * 28, dtype=np.uint32)
 
 if enableRanlux:
+    mf = cl.mem_flags
+    dummyBuffer = np.zeros(nbrOfThreads * 28, dtype=np.uint32)
     ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads))).astype(np.uint32))
+    ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
 else:
-    ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads*4))).astype(np.uint32))
-ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
+    ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads,4))).astype(np.uint32))
 #prg = (cl.Program(ctx, initKernelCode).build(options=programBuildOptions))
 #kernel = prg.ranlux_init_kernel
 
@@ -80,13 +83,23 @@ prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 #kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, ranluxcltab)
 #kernelObj_1.wait()
 
-kernel = prg.ranlux_test_kernel
+
+if enableRanlux:
+    kernel = prg.ranlux_test_kernel
+else:
+    kernel = prg.xorshift_test_kernel
 
 if returnRandoms:
     randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
-    kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
+    if enableRanlux:
+        kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
+    else:
+        kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data)
 else:
-    kernelObj = kernel(queue, globalSize, localSize, ins.data, ranluxcltab)
+    if enableRanlux:
+        kernelObj = kernel(queue, globalSize, localSize, ins.data, ranluxcltab)
+    else:
+        kernelObj = kernel(queue, globalSize, localSize, ins.data)
 
 kernelObj.wait()
 
@@ -97,8 +110,7 @@ if returnRandoms:
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
 print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)
 if enableRanlux:
-    print 'PRNG: RANLUX'
-    print 'RANLUX luxuary factor: %d' % luxuaryFactor
+    print 'PRNG: RANLUX (luxuary factor %d)' % luxuaryFactor
 else:
     print 'PRNG: xorshift'
 #print 'Initiation time: %f' % (1e-9 * (kernelObj_1.profile.end - kernelObj_1.profile.start))

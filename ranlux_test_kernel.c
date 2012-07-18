@@ -1,18 +1,20 @@
-
 %(defines)s
-
-#define RANLUXCL_LUX %(luxuaryFactor)s
-
 
 #ifdef ENABLE_DOUBLE
     #define FLOAT_TYPE double
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-    #define RANLUXCL_SUPPORT_DOUBLE
+    
+    #ifdef ENABLE_RANLUX
+        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+        #define RANLUXCL_SUPPORT_DOUBLE
+    #endif
 #else
     #define FLOAT_TYPE float
 #endif
 
-#include "pyopencl-ranluxcl.cl"
+#ifdef ENABLE_RANLUX
+    #define RANLUXCL_LUX %(luxuaryFactor)s
+    #include "pyopencl-ranluxcl.cl"
+#endif
 
 //__kernel void ranlux_init_kernel(__global uint *ins,
 //                                 __global ranluxcl_state_t *ranluxcltab)
@@ -82,4 +84,36 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //Upload state again so that we don't get the same
     //numbers over again the next time we use ranluxcl.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
+}
+
+__kernel void xorshift_test_kernel(__global uint *ins,
+#ifdef RETURN_RANDOMS
+                                 __global FLOAT_TYPE *randomsOut,
+#endif
+                                  )
+{
+    uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
+    
+    uint4 seed,seedG;
+    seed.x = ins[threadId * 4 + 0];
+    seed.y = ins[threadId * 4 + 1];
+    seed.z = ins[threadId * 4 + 2];
+    seed.w = ins[threadId * 4 + 3];
+
+    uint randLocalOffset = threadId * %(randsPerThread)s;
+    
+    FLOAT_TYPE randomnr;
+    
+    for (int i = 0; i <= %(randsPerThread)s; i++)
+    {
+        randomnr = randFloat (&seed);
+#ifdef RETURN_RANDOMS
+        randomsOut[randOffset + i] = randomnr;
+#endif
+    }
+    
+    seeds[threadId * 4] = seed.x;
+    seeds[threadId * 4 + 1] = seed.y;
+    seeds[threadId * 4 + 2] = seed.z;
+    seeds[threadId * 4 + 3] = seed.w;
 }
