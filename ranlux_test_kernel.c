@@ -89,9 +89,9 @@ randFloat(uint4 *seedPtr)
     return (*seedPtr).w * 2.328306437080797e-10;
 }
 
-__kernel void xorshift_test_kernel(__global uint *ins,
+__kernel void xorshift_test_kernel(__global uint *ins
 #ifdef RETURN_RANDOMS
-                                 __global FLOAT_TYPE *randomsOut
+                                 , __global FLOAT_TYPE *randomsOut
 #endif
                                   )
 {
