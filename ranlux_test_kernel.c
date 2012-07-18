@@ -2,9 +2,9 @@
 
 #ifdef ENABLE_DOUBLE
     #define FLOAT_TYPE double
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     
     #ifdef ENABLE_RANLUX
-        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
         #define RANLUXCL_SUPPORT_DOUBLE
     #endif
 #else
