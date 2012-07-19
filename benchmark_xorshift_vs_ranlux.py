@@ -60,25 +60,27 @@ if logplot:
 pl.plot(randsteps,
         xor[1],'r-',
         linewidth=3.0,
-        label=('xorshift, 32bit'))
+        label=('xorshift, 32bit'),
+        markersize=msize,
+        marker='o')
 
 linestyle = ('g-','b-','c-','k-','m-')
-markerstyle = ('','','','','')
+markerstyle = ('^','<','>','v','*')
 for i in range(0,5):
     pl.plot(randsteps,
             ranlux[i*2],linestyle[i],
             linewidth=2.0,
             label=('RANLUX, lux='+str(i)+', 32bit'),
-            markersize=mszie,
+            markersize=msize,
             marker=markerstyle(i))
 linestyle = ('g--','b--','c--','k--','m--')
-markerstyle = ('','','','','')
+markerstyle = ('^','<','>','v','*')
 for i in range(0,5):
     pl.plot(randsteps,
             ranlux[i*2+1],'r--',
             linewidth=2.0,
             label=('RANLUX, lux='+str(i)+', 64bit'),
-            markersize=mszie,
+            markersize=msize,
             marker=markerstyle(i))
 
 pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
