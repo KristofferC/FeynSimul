@@ -573,17 +573,21 @@ class PIMCKernel:
         * self._metroStepsPerOperatorRun)).mean()
 
     def getGlobalMemory(self):
+        if self._enableDouble:
+            _numBytes = 8
+        else:
+            _numBytes = 4
         usedGlobalMemory = 0
         usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
         usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers * self._N *
-                             self._system.DOF * 4)  # path
+                             self._system.DOF * _numBytes)  # path
         usedGlobalMemory += (self._nbrOfThreads
-                            * len(self._operators) * 4)  # operator
+                            * len(self._operators) * _numBytes)  # operator
         if self._enableGlobalOldPath:
             usedGlobalMemory += (self._nbrOfThreads *
                                 (2 ** self._S - 1)
-                                 * self._system.DOF * 4)
+                                 * self._system.DOF * _numBytes)
         if self._enableBins:
             usedGlobalMemory += (self._binResolutionPerDOF **
                                 self._system.DOF * 4)
