@@ -4,52 +4,40 @@ from matplotlib import rc
 from matplotlib.ticker import *
 import matplotlib.pyplot as plt
 
-xs = np.array([0.000835, 0.021259, 0.077566, 2.113641])   # xorshift single
-xd = np.array([0.000833, 0.021227, 0.077535, 2.116926])   # xorshift double
+xor = np.array([0.000835, 0.021259, 0.077566, 2.113641],
+               [0.000833, 0.021227, 0.077535, 2.116926]) # xorshift
 
-r0s = np.array([0.002772, 0.013913, 0.124960, 1.234409])  # ranlux0 single
-r0d = np.array([0.003888, 0.024675, 0.233399, 2.315815])  # ranlux0 double
+r0 = np.array([0.002772, 0.013913, 0.124960, 1.234409],
+              [0.003888, 0.024675, 0.233399, 2.315815])  # ranlux0
 
-r1s = np.array([0.003372, 0.019870, 0.184641, 1.833603])  # ranlux1 single
-r1d = np.array([0.005065, 0.036373, 0.349675, 3.486245])  # ranlux1 double
+r1 = np.array([0.003372, 0.019870, 0.184641, 1.833603],
+              [0.005065, 0.036373, 0.349675, 3.486245])  # ranlux1
 
-r2s = np.array([0.005217, 0.037840, 0.364948, 3.635847])  # ranlux2 single
-r2d = np.array([0.008705, 0.072788, 0.715689, 7.143060])  # ranlux2 double
+r2 = np.array([0.005217, 0.037840, 0.364948, 3.635847],
+              [0.008705, 0.072788, 0.715689, 7.143060])  # ranlux2
 
-r3s = np.array([0.008220, 0.068618, 0.674307, 6.730529])  # ranlux3 single
-r3d = np.array([0.014878, 0.134723, 1.334791, 13.330784)] # ranlux3 double
+r3 = np.array([0.008220, 0.068618, 0.674307, 6.730529]),
+              [0.014878, 0.134723, 1.334791, 13.330784)] # ranlux3
 
-r4s = np.array([0.012606, 0.113489, 1.124352, 11.224786]) # ranlux4 single
-r4d = np.array([0.023882, 0.225516, 2.243392, 22.421897]) # ranlux4 double
+r4 = np.array([0.012606, 0.113489, 1.124352, 11.224786],
+              [0.023882, 0.225516, 2.243392, 22.421897]) # ranlux4
 
-logplot = True   # Log the y axis or not
-bigimage = True  # 2 column or 1 column image
-plotstep = 16    # Set this to how many points you want to skip
-plotoffset = 15  # Offset for the first point to plot, set to one less than
-                 # plotstep to make sure that you get global maxima
-xr = 3           # Max for x axis (times 10**4)
+logplot = True   # Log the x axis or not
 
+msize = 40
+xs_label = 'xorshift'
+r0_label = 'RANLUX, lux=0'
+r1_label = 'RANLUX, lux=1'
+r2_label = 'RANLUX, lux=2'
+r3_label = 'RANLUX, lux=3'
+r4_label = 'RANLUX, lux=4'
 
-if bigimage:
-    msize = 40
-    gtx470label = 'GPU: nVidia GeForce GTX 470'
-    gtx560label = 'GPU: nVidia GeForce GTX 560 Ti'
-    hd5850label = 'GPU: ATI Radeon HD 5850'
-    gt9600label = 'GPU: nVidia GeForce 9600 GT'
-    cpulabel = 'CPU: Intel Core i5-2500K CPU @ 4GHz'
-    fig_width_pt = 512.0
-    legendloc = 4
-    fsize=16
-else:
-    msize = 20
-    gtx470label = 'GTX470'
-    gtx560label = 'GTX560'
-    hd5850label = 'HD5850'
-    gt9600label = 'GT9600'
-    cpulabel = 'CPU'
-    fig_width_pt = 246.0
-    legendloc = 4
-    fsize=10
+single_label = ' , 32bit'
+double_label = ' , 64bit'
+
+fig_width_pt = 512.0
+legendloc = 4
+fsize=16
 
 # Calculate figure size using golden ratio method
 inches_per_pt = 1.0/72.27                    # Convert pt to inch
@@ -73,22 +61,30 @@ pl.rcParams.update(params)
 
 pl.figure(1)
 if logplot:
-    pl.semilogy()
+    pl.semilogx()
 
 # Dict with settings for different platforms
-gpus = {'gtx470': {'Label': gtx470label,'Show': True, 'Marker': '^',
+gpus = {'xorshift': {'Label': gtx470label,'Show': True, 'Marker': '^',
                    'MarkerSize': msize, 'Color': 'b', 'norm': None,
                    'cmap': None, 'vmin': None, 'vmax': None, 'Alpha': 1.0,
                    'LineWidths': 0.1, 'Verts': None},
-        'gtx560ti': {'Label': gtx560label, 'Show': False, 'Marker': '>',
+        'ranlux0': {'Label': gtx560label, 'Show': False, 'Marker': '>',
                      'MarkerSize': msize, 'Color': 'tomato', 'norm': None,
                      'cmap': None, 'vmin': None, 'vmax': None, 'Alpha': 0.5,
                      'LineWidths': 0.1, 'Verts': None},
-        'hd5850': {'Label': hd5850label, 'Show': True, 'Marker': '<',
+        'ranlux1': {'Label': hd5850label, 'Show': True, 'Marker': '<',
                    'MarkerSize': msize, 'Color': 'g', 'norm': None,
                    'cmap': None, 'vmin': None, 'vmax': None, 'Alpha': 0.5,
                    'LineWidths': 0.1, 'Verts': None},
-        '9600gt': {'Label': gt9600label, 'Show': False, 'Marker': 'o',
+        'ranlux2': {'Label': hd5850label, 'Show': True, 'Marker': '<',
+                   'MarkerSize': msize, 'Color': 'g', 'norm': None,
+                   'cmap': None, 'vmin': None, 'vmax': None, 'Alpha': 0.5,
+                   'LineWidths': 0.1, 'Verts': None},
+        'ranlux3': {'Label': hd5850label, 'Show': True, 'Marker': '<',
+                   'MarkerSize': msize, 'Color': 'g', 'norm': None,
+                   'cmap': None, 'vmin': None, 'vmax': None, 'Alpha': 0.5,
+                   'LineWidths': 0.1, 'Verts': None},
+        'ranlux4': {'Label': gt9600label, 'Show': False, 'Marker': 'o',
                    'MarkerSize': msize, 'Color': 'g', 'norm': None,
                    'cmap': None, 'vmin': None, 'vmax': None, 'Alpha': 0.5,
                    'LineWidths': 0.1, 'Verts': None}}

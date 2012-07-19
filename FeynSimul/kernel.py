@@ -127,12 +127,12 @@ class PIMCKernel:
 
         if self._enableRanlux:
             if self._luxuaryFactor == None or self._luxuaryFactor < 0:
-                raise NameError('luxuaryFactor needs to be an integer > 0.')
+                raise NameError('luxuaryFactor needs to be an int >= 0.')
             else:
                 try:
                     self._luxuaryFactor += 1
                 except TypeError:
-                    raise NameError('luxuaryFactor needs to be an integer > 0.')
+                    raise NameError('luxuaryFactor needs to be an int >= 0.')
 
         if self._enableBins:
             self._binResolutionPerDOF = ka.binResolutionPerDOF
@@ -317,7 +317,7 @@ class PIMCKernel:
             replacements['PSAlpha'] = '%1.17e' % self._PSAlpha
 
         if self._enableRanlux:
-            replacements['luxuaryFactor'] = '%d' % self._luxuaryFactor
+            replacements['luxuaryFactor'] = '%s' % str(self._luxuaryFactor)
 
         if self._enableBins:
             replacements['xMin'] = '%1.17e' % self._xMin
@@ -374,11 +374,22 @@ class PIMCKernel:
             self._accepts = cl.array.zeros(self._queue,
                     (self._nbrOfThreads, ), np.uint32)
 
-            #np.random.seed(0)
-            self._seeds = cl.array.to_device(self._queue,
-                             (np.random.randint(0, high = 2 ** 31 - 1,
-                              size = (self._nbrOfThreads + 1, 4))
-                              ).astype(np.uint32))
+            if self._enableRanlux:
+                #A buffer needed for the Ranlux state
+                mf = cl.mem_flags
+                dummyBuffer = np.zeros(self._nbrOfThreads * 28, dtype=np.uint32)
+                self._ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, 
+                                              hostbuf=dummyBuffer)
+                self._seeds = cl.array.to_device(self._queue,
+                                 (np.random.randint(0, high = 2 ** 31 - 1,
+                                  size = (self._nbrOfThreads))
+                                  ).astype(np.uint32))
+            else:
+                #np.random.seed(0)
+                self._seeds = cl.array.to_device(self._queue,
+                                 (np.random.randint(0, high = 2 ** 31 - 1,
+                                  size = (self._nbrOfThreads + 1, 4))
+                                  ).astype(np.uint32))
             if self._enableOperator:
                 #pyopencl.array objects are created for storing
                 #the calculated operator means from each thread
@@ -407,7 +418,6 @@ class PIMCKernel:
                     binTouple += (self._binResolutionPerDOF,)
                 self._binCounts = cl.array.zeros(self._queue,
                         binTouple, np.uint32)
-
         except pyopencl.MemoryError:
             raise Exception("Unable to allocate global "
                             "memory on device, out of memory?")
@@ -435,6 +445,9 @@ class PIMCKernel:
 
         if self._enableBins:
             args += [self._binCounts.data]
+
+        if self._enableRanlux:
+            args += [self._ranluxcltab]
 
         #print(self._globalSize)#(nbrOfWorkgroups* nbrOfThreadsPerWalker, RP.nbrOfWalkersPerWorkGroup)
         #print(self._localSize)#(nbrOfThreadsPerWalker,RP.nbrOfWalkersPerWorkGroup)

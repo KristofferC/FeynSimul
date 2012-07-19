@@ -69,7 +69,7 @@
 //#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)d
+    #define RANLUXCL_LUX %(luxuaryFactor)s
     
     
     #ifdef ENABLE_DOUBLE
