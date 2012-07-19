@@ -68,20 +68,22 @@ linestyle = ('g-','b-','c-','k-','m-')
 markerstyle = ('^','<','>','v','*')
 for i in range(0,5):
     pl.plot(randsteps,
-            ranlux[i*2],linestyle[i],
+            ranlux[i*2],
+            linestyle[i],
             linewidth=2.0,
             label=('RANLUX, lux='+str(i)+', 32bit'),
             markersize=msize,
-            marker=markerstyle(i))
+            marker=markerstyle[i])
 linestyle = ('g--','b--','c--','k--','m--')
 markerstyle = ('^','<','>','v','*')
 for i in range(0,5):
     pl.plot(randsteps,
-            ranlux[i*2+1],'r--',
+            ranlux[i*2+1],
+            linestyle[i],
             linewidth=2.0,
             label=('RANLUX, lux='+str(i)+', 64bit'),
             markersize=msize,
-            marker=markerstyle(i))
+            marker=markerstyle[i]))
 
 pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
 pl.xlabel(r'Number of randoms per thread')
