@@ -87,6 +87,8 @@ randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
+    //                    5.421010862427522e-10
+    //return ((double) (*seedPtr).w) * 2.32830643653869628906e-10;
 }
 
 __kernel void xorshift_test_kernel(__global uint *ins

@@ -317,7 +317,7 @@ class PIMCKernel:
             replacements['PSAlpha'] = '%1.17e' % self._PSAlpha
 
         if self._enableRanlux:
-            replacements['luxuaryFactor'] = '%s' % str(self._luxuaryFactor)
+            replacements['luxuaryFactor'] = '%d' % self._luxuaryFactor
 
         if self._enableBins:
             replacements['xMin'] = '%1.17e' % self._xMin
@@ -380,12 +380,13 @@ class PIMCKernel:
                 dummyBuffer = np.zeros(self._nbrOfThreads * 28, dtype=np.uint32)
                 self._ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, 
                                               hostbuf=dummyBuffer)
+                #Seeds for RANLUX initialization
                 self._seeds = cl.array.to_device(self._queue,
                                  (np.random.randint(0, high = 2 ** 31 - 1,
                                   size = (self._nbrOfThreads))
                                   ).astype(np.uint32))
             else:
-                #np.random.seed(0)
+                #seeds for xorshift: np.random.seed(0)
                 self._seeds = cl.array.to_device(self._queue,
                                  (np.random.randint(0, high = 2 ** 31 - 1,
                                   size = (self._nbrOfThreads + 1, 4))

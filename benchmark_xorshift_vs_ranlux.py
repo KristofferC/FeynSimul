@@ -4,9 +4,9 @@ from matplotlib import rc
 from matplotlib.ticker import *
 import matplotlib.pyplot as plt
 
-xor = np.array([[0.000835, 0.021259, 0.077566, 2.113641],
-                [0.000833, 0.021227, 0.077535, 2.116926]]) # xorshift
+xor = np.array([[0.000835, 0.021259, 0.077566, 2.113641, 213.113910], # xorshift
 
+                [0.000833, 0.021227, 0.077535, 2.116926]])
 ranlux = np.array([[0.002772, 0.013913, 0.124960, 1.234409],   #ranlux0 single
                    [0.003888, 0.024675, 0.233399, 2.315815],   #ranlux0 double
                
@@ -19,11 +19,20 @@ ranlux = np.array([[0.002772, 0.013913, 0.124960, 1.234409],   #ranlux0 single
                    [0.008220, 0.068618, 0.674307, 6.730529],   #ranlux3 single
                    [0.014878, 0.134723, 1.334791, 13.330784],  #ranlux3 double
                
-                   [0.012606, 0.113489, 1.124352, 11.224786],  #ranlux4 single
+                   [0.012606, 0.113489, 1.124352, 11.224786, 1122.878422],  #ranlux4 single
                    [0.023882, 0.225516, 2.243392, 22.421897]]) #ranlux4 double
 
+# 10 000 000 * nbrOfThreads:
+# xor:  213.113910 
+# ran0: 
+# ran1: 
+# ran2: 
+# ran3: 
+# ran4: 1122.878422
+
+
 nbrOfThreads = 448*32*4;
-randsteps = np.array([1000,10000,100000,1000000])
+randsteps = np.array([1000,10000,100000,1000000,100000000])
 
 logplot = True   # Log the x axis or not
 
@@ -83,7 +92,7 @@ for i in range(0,5):
             linewidth=2.0,
             label=('RANLUX, lux='+str(i)+', 64bit'),
             markersize=msize,
-            marker=markerstyle[i]))
+            marker=markerstyle[i])
 
 pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
 pl.xlabel(r'Number of randoms per thread')

@@ -69,7 +69,7 @@
 //#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)s
+    #define RANLUXCL_LUX %(luxuaryFactor)d
     
     
     #ifdef ENABLE_DOUBLE
@@ -80,8 +80,10 @@
     #endif
     
     #include "pyopencl-ranluxcl.cl"
+    #define RAND_FUNCTION_ARG &ranluxcltab
 #else
     #define RAND_FUNCTION randFloat
+    #define RAND_FUNCTION_ARG &seed
 #endif
 
 //##############################################################################
