@@ -82,11 +82,11 @@ pl.rcParams.update(params)
 
 pl.figure(1)
 if logplot:
-    pl.loglog()
+    pl.semilogx()
 
 # xorshift plot
 pl.plot(randsteps,
-        xor,'r-',
+        randsteps/xor,'r-',
         linewidth=3.0,
         label=('xorshift, 32bit'),
         markersize=msize,
@@ -98,7 +98,7 @@ if showdouble:
     markerstyle = ('^','<','>','v','*')
     for i in range(0,5):
         pl.plot(randsteps,
-                ranlux[i*2+1],
+                randsteps/ranlux[i*2+1],
                 linestyle[i],
                 linewidth=2.0,
                 label=('RANLUX, lux='+str(i)+', 64bit'),
@@ -109,7 +109,7 @@ else:
     markerstyle = ('^','<','>','v','*')
     for i in range(0,5):
         pl.plot(randsteps,
-                ranlux[i*2],
+                randsteps/ranlux[i*2],
                 linestyle[i],
                 linewidth=2.0,
                 label=('RANLUX, lux='+str(i)+', 32bit'),
@@ -122,7 +122,7 @@ if logplot:
 else:
     pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
 pl.xlabel(r'Number of randoms per thread')
-pl.ylabel(r'Time [sec]')
+pl.ylabel(r'Randoms per second [sec$^{-1}$]')
 
 #        'ranlux4': {'Label': gt9600label, 'Show': False, 'Marker': 'o',
 #                   'MarkerSize': msize, 'Color': 'g', 'norm': None,
