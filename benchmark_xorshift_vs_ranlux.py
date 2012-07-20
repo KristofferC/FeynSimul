@@ -4,6 +4,10 @@ from matplotlib import rc
 from matplotlib.ticker import *
 import matplotlib.pyplot as plt
 
+
+logplot = True   # Log the x axis or not
+showdouble = False
+
 #xor = np.array([0.000835, 0.021259, 0.077566, 2.113641, 7.748644, 213.113910]) #xorshift single
 xor = np.array([0.000835, 0.021259, 0.077566, 2.113641, 7.748644]) #xorshift single
 
@@ -50,9 +54,8 @@ nbrOfThreads = 448*32*4;
 randsteps = np.array([1000,10000,100000,1000000,10000000])
 #randsteps = np.array([1000,10000,100000,1000000,10000000,100000000])
 
-logplot = True   # Log the x axis or not
 
-msize = 40
+msize = 10
 fig_width_pt = 512.0
 legendloc = 4
 fsize=16
@@ -79,7 +82,7 @@ pl.rcParams.update(params)
 
 pl.figure(1)
 if logplot:
-    pl.semilogx()
+    pl.loglog()
 
 # xorshift plot
 pl.plot(randsteps,
@@ -89,28 +92,35 @@ pl.plot(randsteps,
         markersize=msize,
         marker='o')
 
-linestyle = ('g-','b-','c-','k-','m-')
-markerstyle = ('^','<','>','v','*')
-for i in range(0,5):
-    pl.plot(randsteps,
-            ranlux[i*2],
-            linestyle[i],
-            linewidth=2.0,
-            label=('RANLUX, lux='+str(i)+', 32bit'),
-            markersize=msize,
-            marker=markerstyle[i])
-linestyle = ('g--','b--','c--','k--','m--')
-markerstyle = ('^','<','>','v','*')
-for i in range(0,5):
-    pl.plot(randsteps,
-            ranlux[i*2+1],
-            linestyle[i],
-            linewidth=2.0,
-            label=('RANLUX, lux='+str(i)+', 64bit'),
-            markersize=msize,
-            marker=markerstyle[i])
 
-pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
+if showdouble:
+    linestyle = ('g--','b--','c--','k--','m--')
+    markerstyle = ('^','<','>','v','*')
+    for i in range(0,5):
+        pl.plot(randsteps,
+                ranlux[i*2+1],
+                linestyle[i],
+                linewidth=2.0,
+                label=('RANLUX, lux='+str(i)+', 64bit'),
+                markersize=msize,
+                marker=markerstyle[i])
+else:
+    linestyle = ('g-','b-','c-','k-','m-')
+    markerstyle = ('^','<','>','v','*')
+    for i in range(0,5):
+        pl.plot(randsteps,
+                ranlux[i*2],
+                linestyle[i],
+                linewidth=2.0,
+                label=('RANLUX, lux='+str(i)+', 32bit'),
+                markersize=msize,
+                marker=markerstyle[i])
+
+
+if logplot:
+    pl.title(r'loglog of xorshift vs RANLUX on 448*32*4 (=57344) threads')
+else:
+    pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
 pl.xlabel(r'Number of randoms per thread')
 pl.ylabel(r'Time [sec]')
 
