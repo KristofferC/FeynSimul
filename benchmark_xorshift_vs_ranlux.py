@@ -73,8 +73,8 @@ params = {'backend': 'ps',
          'axes.labelsize': fsize,
          'text.fontsize': 2*fsize,
          'legend.fontsize': 0.8*fsize,
-         'xtick.labelsize': 0.8*fsize,
-         'ytick.labelsize': 0.8*fsize,
+         'xtick.labelsize': 1*fsize,
+         'ytick.labelsize': 1*fsize,
          'text.usetex': True,
          'figure.figsize': fig_size}
 
@@ -122,7 +122,7 @@ if logplot:
 else:
     pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
 pl.xlabel(r'Number of randoms per thread')
-pl.ylabel(r'Randoms per second [sec$^{-1}$]')
+pl.ylabel(r'Randoms on each thread per second [sec$^{-1}$]')
 
 #        'ranlux4': {'Label': gt9600label, 'Show': False, 'Marker': 'o',
 #                   'MarkerSize': msize, 'Color': 'g', 'norm': None,

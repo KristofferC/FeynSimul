@@ -316,7 +316,7 @@ class PIMCKernel:
         if self._enablePathShift:
             replacements['PSAlpha'] = '%1.17e' % self._PSAlpha
 
-        if self._enableRanlux:
+        if self._enableRanlux and self._luxuaryFactor >= 0:
             replacements['luxuaryFactor'] = '%d' % self._luxuaryFactor
 
         if self._enableBins:
