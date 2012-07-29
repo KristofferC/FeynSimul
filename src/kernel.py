@@ -44,7 +44,7 @@ def humanReadableSize(size):
 
 
 class PIMCKernel:
-    def __init__(self,ka):
+    def __init__(self,ka,verbose=False):
         """
         Loads the kernel to the GPU and readies it to be run.
 
@@ -55,6 +55,8 @@ class PIMCKernel:
         @type ka: L{kernelArgs} class
         @param self._system: An instance of kernelArgs describing what kind of 
         kernel to build.
+
+        ka.potential*ka.beta should give the energy/(kb T) (dimensionless). 
         """
         self._enableBins = ka.enableBins
         self._enableOperator = ka.enableOperator
@@ -246,9 +248,10 @@ class PIMCKernel:
         kernelCode = kernelCode_r % replacements
         """ String containing the kernel code that will be sent to the GPU. """
 
-        printCleaned = False
-        if printCleaned:
+        if verbose:
             import commands
+            with open('cleaned.c','w') as f:
+                f.write(kernelCode)
             preprocessedCode = commands.getstatusoutput('echo "' +
                     kernelCode + '" | cpp')[1]
             cleanedPreprocessedCode = ""
@@ -256,7 +259,9 @@ class PIMCKernel:
                 if len(i) > 0:
                     if i[0] != '#':
                         cleanedPreprocessedCode += i + '\n'
-            print cleanedPreprocessedCode
+            with open('preprocessed.c','w') as f:
+                f.write(cleanedPreprocessedCode)
+            print('Saved cleaned and preprocessed code in cleaned.c and preprocessed.c')
 
         #Create the OpenCL context and command queue
         self._ctx = cl.create_some_context()

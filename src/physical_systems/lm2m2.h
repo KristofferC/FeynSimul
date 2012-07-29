@@ -1,25 +1,25 @@
-# This file is part of FeynSimul.
-#
-# FeynSimul is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# FeynSimul is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
+// This file is part of FeynSimul.
+//
+// FeynSimul is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// FeynSimul is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
 
-# -*- coding: utf-8 -*-
+// -*- coding: utf-8 -*-
 inline float sqr(float x)
 {
     return x*x;
 }                 
 //The following functions take r in Angstrom and return energy in K
-float lm2m2(float r)
+float lm2m2sqrt(float sr)
 {
     //source: physics.nist.gov
     float k=8.6173324e-5f; //eV/K boltzmann constant, 
@@ -44,7 +44,7 @@ float lm2m2(float r)
     float xa1 = 1.0035359490f;
     float xa2 = 1.4547903690f;
 
-    float x=r/rm;
+    float x=sqrt(sr)/rm;
     float x2=x*x;
     float x6=x2*x2*x2;
     float x8=x6*x2;
@@ -78,7 +78,7 @@ float lm2m2(float r)
     return epsilon_over_k*(Vb_star+Va_star);
 }
 
-float dlm2m2dr(float r)
+float dlm2m2sqrtdr(float sr)
 {
     //source: physics.nist.gov
     float k=8.6173324e-5f; //eV/K boltzmann constant, 
@@ -102,7 +102,7 @@ float dlm2m2dr(float r)
     float Aa=0.0026000000f;
     float xa1 = 1.0035359490f;
     float xa2 = 1.4547903690f;
-
+    float r=sqrt(sr);
     float x=r/rm;
     float x2=x*x;
     float x6=x2*x2*x2;
@@ -139,5 +139,5 @@ float dlm2m2dr(float r)
         dVa_stardx=Aa*(cos(B*(x-xa1)-M_PI/2.0f)*B+1.0f);
     }
     
-    return epsilon_over_k*(dVb_stardx+dVa_stardx)/rm;
+    return epsilon_over_k*(dVb_stardx+dVa_stardx)/(rm*2.0f*r);//..*2.0f*r) because of sqrt
 } 

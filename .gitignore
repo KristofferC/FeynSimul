@@ -6,3 +6,8 @@
 
 # Compiled python files
 *.pyc
+
+# Descriptve comment
+results/
+cleaned.c
+preprocessed.c
