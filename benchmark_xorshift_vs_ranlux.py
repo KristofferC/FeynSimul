@@ -118,9 +118,9 @@ else:
 
 
 if logplot:
-    pl.title(r'loglog of xorshift vs RANLUX on 448*32*4 (=57344) threads')
+    pl.title(r'logplot of xorshift vs RANLUX on 448*32*4 (=57344) threads')
 else:
-    pl.title(r'xorshift vs RANLUX on 448*32*4 (=57344) threads')
+    pl.title(r'plot xorshift vs RANLUX on 448*32*4 (=57344) threads')
 pl.xlabel(r'Number of randoms per thread')
 pl.ylabel(r'Randoms on each thread per second [sec$^{-1}$]')
 

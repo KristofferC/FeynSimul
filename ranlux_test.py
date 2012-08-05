@@ -13,11 +13,12 @@ import pyopencl.clrandom
 import pyopencl.clmath
 
 luxuaryFactor = 2
+enableRanlux = True
+useRanluxInt = False
 enableDouble = False
+returnRandoms = True
 enablePlot = False
 printKernelCode = False
-returnRandoms = True
-enableRanlux = True
 nbrOfWalkers = 448*32*4
 localSize = None
 globalSize = (nbrOfWalkers,)
@@ -38,6 +39,9 @@ if returnRandoms:
     
 if enableRanlux:
     defines += "#define ENABLE_RANLUX\n"
+    
+if useRanluxInt:
+    defines += "#define USE_RANLUXCL_INT\n"
 
 class DictWithDefault(defaultdict):
     def __missing__(self, key):
@@ -90,7 +94,12 @@ else:
     kernel = prg.xorshift_test_kernel
 
 if returnRandoms:
-    randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
+    if useRanluxInt and enableRanlux:
+        randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.uint32)
+    else:
+        randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
+        
+        
     if enableRanlux:
         kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
     else:
@@ -115,10 +124,13 @@ else:
     print 'PRNG: xorshift'
 #print 'Initiation time: %f' % (1e-9 * (kernelObj_1.profile.end - kernelObj_1.profile.start))
 print 'Run time: %f' % (1e-9 * (kernelObj.profile.end - kernelObj.profile.start))
-if enableDouble:
-    print 'Float precision: double'
+if useRanluxInt and enableRanlux:
+    print 'Data type: uint 32bit'
 else:
-    print 'Float precision: single'
+    if enableDouble:
+        print 'Data type: float 64bit'
+    else:
+        print 'Data type: float 32bit'
 if returnRandoms:
     print 'Mean: %f' % np.mean(resultingNumbers, dtype=np.float64)
     print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers, dtype=np.float64), (1.0/np.sqrt(12)))

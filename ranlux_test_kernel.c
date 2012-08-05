@@ -1,6 +1,9 @@
 %(defines)s
 
 #ifdef ENABLE_DOUBLE
+    #define DATA_TYPE double
+    #define DATA_TYPE_V double4
+    #define DATA_TYPE_F ranluxcl64
     #define FLOAT_TYPE double
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     
@@ -8,6 +11,16 @@
         #define RANLUXCL_SUPPORT_DOUBLE
     #endif
 #else
+    #ifdef USE_RANLUXCL_INT
+        #define DATA_TYPE uint
+        #define DATA_TYPE_V uint4
+        #define DATA_TYPE_F ranluxclint
+    #else
+        #define DATA_TYPE float
+        #define DATA_TYPE_V float4
+        #define DATA_TYPE_F ranluxcl32
+    #endif
+    
     #define FLOAT_TYPE float
 #endif
 
@@ -20,11 +33,16 @@
 
 
 #ifdef ENABLE_RANLUX
+uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
+{
+    return convert_uint4(ranluxcl32(ranluxclstate) * (float4)1.6777216E7f);
+}
+
 #define RANLUXCL_LUX %(luxuaryFactor)s
 #include "pyopencl-ranluxcl.cl"
 __kernel void ranlux_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
-                                 __global FLOAT_TYPE *randomsOut,
+                                 __global DATA_TYPE *randomsOut,
 #endif
                                  __global ranluxcl_state_t *ranluxcltab)
 {
@@ -41,22 +59,15 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //Generate a float4 with each component on (0,1),
     //end points not included. We can call ranluxcl as many
     //times as we like until we upload the state again.'
-#ifdef ENABLE_DOUBLE
-    double4 randomnr;
-#else
-    float4 randomnr;
-#endif
+    DATA_TYPE_V randomnr;
+    
     uint randOffset;
     uint randLocalOffset = threadId * %(randsPerThread)s;
     
     for (int i = 0; i <= %(randsPerThread)s / 4; i++)
     {
         randOffset = randLocalOffset + 4 * i;
-#ifdef ENABLE_DOUBLE
-        randomnr = ranluxcl64(&ranluxclstate);
-#else
-        randomnr = ranluxcl32(&ranluxclstate);
-#endif
+        randomnr = DATA_TYPE_F (&ranluxclstate);
 
 #ifdef RETURN_RANDOMS
         randomsOut[randOffset + 0] = randomnr.x;
@@ -82,8 +93,7 @@ inline void xorshift (uint4 *seedPtr)
     (*seedPtr).w = ((*seedPtr).w ^ ((*seedPtr).w >> 19) ^ (t ^ (t >> 8)));
 }
 
-inline FLOAT_TYPE
-randFloat(uint4 *seedPtr)
+inline FLOAT_TYPE randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
