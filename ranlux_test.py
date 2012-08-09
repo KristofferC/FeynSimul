@@ -15,7 +15,7 @@ import pyopencl.clmath
 luxuaryFactor = 2
 enableRanlux = True
 useRanluxInt = False
-ranluxIntMax = "1.6777216E7f"
+ranluxIntMax = 2**24
 enableDouble = False
 returnRandoms = True
 enablePlot = False
@@ -24,7 +24,7 @@ nbrOfWalkers = 448*32*4
 localSize = None
 globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
-randsPerThread = 10000 # must be a multiple of 4!
+randsPerThread = 1000 # must be a multiple of 4!
 
 defines = ""
 
@@ -52,7 +52,7 @@ replacements = DictWithDefault()
 replacements['defines'] = defines
 replacements['luxuaryFactor'] = str(luxuaryFactor)
 replacements['randsPerThread'] = str(randsPerThread)
-replacements['ranluxIntMax'] = ranluxIntMax
+replacements['ranluxIntMax'] = (str('%.8E' % ranluxIntMax) + 'f')
 
 ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
@@ -134,8 +134,12 @@ else:
     else:
         print 'Data type: float 32bit'
 if returnRandoms:
-    print 'Mean: %f' % np.mean(resultingNumbers, dtype=np.float64)
-    print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers, dtype=np.float64), (1.0/np.sqrt(12)))
+    if useRanluxInt and enableRanlux:
+        print 'Mean: %f \t(normed: %f)' % (np.mean(resultingNumbers, dtype=np.float64), (np.mean(resultingNumbers, dtype=np.float64)/float(ranluxIntMax)))
+        print 'Normed Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % ((np.std(resultingNumbers, dtype=np.float64)/float(ranluxIntMax)), (1.0/np.sqrt(12)))
+    else:
+        print 'Mean: %f' % np.mean(resultingNumbers, dtype=np.float64)
+        print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers, dtype=np.float64), (1.0/np.sqrt(12)))
 
 if enablePlot and returnRandoms:
     import matplotlib.mlab as mlab
