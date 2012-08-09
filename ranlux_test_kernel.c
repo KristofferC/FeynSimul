@@ -33,13 +33,15 @@
 
 
 #ifdef ENABLE_RANLUX
-uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
-{
-    return convert_uint4(ranluxcl32(ranluxclstate) * (float4)1.6777216E7f);
-}
+#include "pyopencl-ranluxcl.cl"
 
 #define RANLUXCL_LUX %(luxuaryFactor)s
-#include "pyopencl-ranluxcl.cl"
+
+inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
+{
+    return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
+}
+
 __kernel void ranlux_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
                                  __global DATA_TYPE *randomsOut,

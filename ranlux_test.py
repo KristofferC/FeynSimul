@@ -15,6 +15,7 @@ import pyopencl.clmath
 luxuaryFactor = 2
 enableRanlux = True
 useRanluxInt = False
+ranluxIntMax = 2**24-1
 enableDouble = False
 returnRandoms = True
 enablePlot = False
@@ -51,6 +52,7 @@ replacements = DictWithDefault()
 replacements['defines'] = defines
 replacements['luxuaryFactor'] = str(luxuaryFactor)
 replacements['randsPerThread'] = str(randsPerThread)
+replacements['ranluxIntMax'] = str(ranluxIntMax) + 'f'
 
 ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
