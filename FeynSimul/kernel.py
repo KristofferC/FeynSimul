@@ -76,6 +76,7 @@ class PIMCKernel:
         self._nbrOfWalkersPerWorkGroup = ka.nbrOfWalkersPerWorkGroup
         self._enableRanlux = ka.enableRanlux
         self._luxuaryFactor = ka.luxuaryFactor
+        self._ranluxIntMax = ka.ranluxIntMax
         self._N = ka.N
         self._S = ka.S
         self._beta = ka.beta
@@ -127,12 +128,20 @@ class PIMCKernel:
 
         if self._enableRanlux:
             if self._luxuaryFactor == None or self._luxuaryFactor < 0:
-                raise NameError('luxuaryFactor needs to be an int >= 0.')
+                raise NameError('luxuaryFactor needs to be an uint >= 0.')
             else:
                 try:
                     self._luxuaryFactor += 1
                 except TypeError:
-                    raise NameError('luxuaryFactor needs to be an int >= 0.')
+                    raise NameError('luxuaryFactor needs to be an integer.')
+                    
+            if self._ranluxIntMax == None or self._ranluxIntMax <= 0:
+                raise NameError('ranluxIntMax needs to be an uint > 0.')
+            else:
+                try:
+                    self._ranluxIntMax += 1
+                except TypeError:
+                    raise NameError('ranluxIntMax needs to be an integer.')
 
         if self._enableBins:
             self._binResolutionPerDOF = ka.binResolutionPerDOF
@@ -318,6 +327,8 @@ class PIMCKernel:
 
         if self._enableRanlux and self._luxuaryFactor >= 0:
             replacements['luxuaryFactor'] = '%d' % self._luxuaryFactor
+        if self._enableRanlux and self._ranluxIntMax > 0:
+            replacements['ranluxIntMax'] = '%s' % (str('%.9E' % self._ranluxIntMax) + 'f')
 
         if self._enableBins:
             replacements['xMin'] = '%1.17e' % self._xMin

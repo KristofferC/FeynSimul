@@ -74,16 +74,16 @@
     
     #ifdef ENABLE_DOUBLE
         #define RANLUXCL_SUPPORT_DOUBLE
-        #define RAND_FUNCTION ranluxcl64
+        #define RAND_FLOAT_FUNCTION ranluxcl64
     #else
-        #define RAND_FUNCTION ranluxcl32
+        #define RAND_FLOAT_FUNCTION ranluxcl32
     #endif
     
     #include "pyopencl-ranluxcl.cl"
-    #define RAND_FUNCTION_ARG &ranluxcltab
+    #define RAND_FLOAT_FUNCTION_ARG &ranluxcltab
 #else
-    #define RAND_FUNCTION randFloat
-    #define RAND_FUNCTION_ARG &seed
+    #define RAND_FLOAT_FUNCTION randFloat
+    #define RAND_FLOAT_FUNCTION_ARG &seed
 #endif
 
 //##############################################################################
@@ -140,6 +140,17 @@ __kernel void ranlux_init_kernel(__global uint *ins,
                                  __global ranluxcl_state_t *ranluxcltab)
 {
     ranluxcl_initialization(ins, ranluxcltab);
+}
+
+//##############################################################################
+//#                                ranluxclint                                 #
+//##############################################################################
+//Description: Used to produce four integers (uint4) with ranlux, ranging
+//             between 0 and ranluxIntMax-1, using the same state buffer as the
+//             other ranlux functions
+inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
+{
+    return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
 }
 #else // RANLUX NOT ENABLED
 //##############################################################################

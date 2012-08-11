@@ -35,6 +35,7 @@ class KernelArgs:
                  enableDouble=None,
                  enableRanlux=None,
                  luxuaryFactor=None,
+                 ranluxIntMax=None,
                  S=None,
                  alpha=None,
                  PSAlpha=None,
@@ -112,6 +113,9 @@ class KernelArgs:
                               value of RANLUXCL). Higher number means better
                               quality, but slower generation. Description:
                               http://wwwasdoc.web.cern.ch/wwwasdoc/shortwrupsdir/v115/top.html
+                              
+        :type ranluxIntMax: int
+        :param ranluxIntMax: Ranlux integers range between [0,ranluxIntMax)
         
         :type S: int 
         :param S: Parameter to the bisection sampling algorithm. 2 ** S is the
@@ -188,7 +192,8 @@ class KernelArgs:
         self.enableOperator = enableOperator
 
         self.enableRanlux = enableRanlux
-        self.luxuaryFactor = luxuaryFactor     
+        self.luxuaryFactor = luxuaryFactor
+        self.ranluxIntMax = ranluxIntMax
 
         self.operatorRuns = operatorRuns
         self.operators = operators
