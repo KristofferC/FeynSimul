@@ -91,6 +91,7 @@ prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 
 
 if enableRanlux:
+    kernel = prg.ranlux_test_kernel_init
     kernel = prg.ranlux_test_kernel
 else:
     kernel = prg.xorshift_test_kernel

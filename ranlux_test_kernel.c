@@ -42,14 +42,18 @@ inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
     return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
 }
 
+__kernel void ranlux_test_kernel_init(__gloal uint *ins,
+                                      __global ranluxcl_state_t *ranluxcltab)
+{
+    ranluxcl_initialization(ins, ranluxcltab);
+}
+
 __kernel void ranlux_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
                                  __global DATA_TYPE *randomsOut,
 #endif
                                  __global ranluxcl_state_t *ranluxcltab)
 {
-    ranluxcl_initialization(ins, ranluxcltab);
-    
     uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
     
     //ranluxclstate stores the state of the generator.
