@@ -43,7 +43,7 @@ inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
 //    ranluxcl_initialization(ins, ranluxcltab);
 //}
 
-__kernel void ranlux_test_kernel_init(__gloal uint *ins,
+__kernel void ranlux_test_kernel_init(__global uint *ins,
                                       __global ranluxcl_state_t *ranluxcltab)
 {
     //ranluxclstate stores the state of the generator.
