@@ -90,8 +90,12 @@ prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 #kernelObj_1.wait()
 
 
+
+
 if enableRanlux:
     kernel_init = prg.ranlux_test_kernel_init
+    kernelObj_init = kernel_init(queue, globalSize, localSize, ins.data, ranluxcltab)
+    kernelObj_init.wait()
     kernel = prg.ranlux_test_kernel
 else:
     kernel = prg.xorshift_test_kernel
@@ -104,19 +108,15 @@ if returnRandoms:
         
         
     if enableRanlux:
-        kernelObj_init = kernel_init(queue, globalSize, localSize, ins.data, ranluxcltab)
         kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
     else:
         kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data)
 else:
     if enableRanlux:
-        kernelObj_init = kernel(queue, globalSize, localSize, ins.data, ranluxcltab)
         kernelObj = kernel(queue, globalSize, localSize, ins.data, ranluxcltab)
     else:
         kernelObj = kernel(queue, globalSize, localSize, ins.data)
 
-if enableRanlux:
-    kernelObj_init.wait()
 kernelObj.wait()
 
 if returnRandoms:

@@ -25,12 +25,6 @@
 #endif
 
 
-//__kernel void ranlux_init_kernel(__global uint *ins,
-//                                 __global ranluxcl_state_t *ranluxcltab)
-//{
-//    ranluxcl_initialization(ins, ranluxcltab);
-//}
-
 
 #ifdef ENABLE_RANLUX
 #include "pyopencl-ranluxcl.cl"
@@ -42,9 +36,19 @@ inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
     return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
 }
 
+
+//__kernel void ranlux_init_kernel(__global uint *ins,
+//                                 __global ranluxcl_state_t *ranluxcltab)
+//{
+//    ranluxcl_initialization(ins, ranluxcltab);
+//}
+
 __kernel void ranlux_test_kernel_init(__gloal uint *ins,
                                       __global ranluxcl_state_t *ranluxcltab)
 {
+    //ranluxclstate stores the state of the generator.
+    ranluxcl_state_t ranluxclstate;
+
     ranluxcl_initialization(ins, ranluxcltab);
 }
 
