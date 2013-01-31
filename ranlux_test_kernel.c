@@ -52,6 +52,18 @@ __kernel void ranlux_test_kernel_init(__global uint *ins,
     ranluxcl_initialization(ins, ranluxcltab);
 }
 
+inline DATA_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
+                                my_union *random_temp)
+{
+    if((randCount & 3) == 0)
+    {
+        random_temp.vect = DATA_TYPE_F (&ranluxclstate);
+    }
+    
+    
+    return random_temp.a[(randCount++) & 3];
+}
+
 __kernel void ranlux_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
                                  __global DATA_TYPE *randomsOut,
@@ -69,8 +81,29 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //Generate a float4 with each component on (0,1),
     //end points not included. We can call ranluxcl as many
     //times as we like until we upload the state again.'
-    DATA_TYPE_V randomnr;
+    DATA_TYPE randomnr;
+
+    union my_union
+    {
+        FLOAT_TYPE_VECTOR vect;
+        FLOAT_TYPE a[4];
+    };
     
+    my_union random_temp;
+
+    uint randOffset;
+    uint randLocalOffset = threadId * %(randsPerThread)s;
+    int randCount = 1;    
+        
+    for (int i = 0; i <= %(randsPerThread)s; i++)
+    {
+        randOffset = randLocalOffset + i;
+        randomnr = ranluxWrapper(&ranluxclstate, &randCount, &random_temp);
+
+#ifdef RETURN_RANDOMS
+        randomsOut[randOffset] = randomnr;
+#endif
+    /*
     uint randOffset;
     uint randLocalOffset = threadId * %(randsPerThread)s;
     
@@ -84,7 +117,7 @@ __kernel void ranlux_test_kernel(__global uint *ins,
         randomsOut[randOffset + 1] = randomnr.y;
         randomsOut[randOffset + 2] = randomnr.z;
         randomsOut[randOffset + 3] = randomnr.w;
-#endif
+#endif*/
     }
     
     //Upload state again so that we don't get the same

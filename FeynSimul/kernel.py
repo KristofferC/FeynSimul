@@ -389,7 +389,7 @@ class PIMCKernel:
                 #A buffer needed for the Ranlux state
                 mf = cl.mem_flags
                 dummyBuffer = np.zeros(self._nbrOfThreads * 28, dtype=np.uint32)
-                self._ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, 
+                self._ranluxcltab = cl.Buffer(self._ctx, mf.READ_WRITE, size=0, 
                                               hostbuf=dummyBuffer)
                 #Seeds for RANLUX initialization
                 self._seeds = cl.array.to_device(self._queue,
