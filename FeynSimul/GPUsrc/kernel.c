@@ -69,7 +69,7 @@
 //#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)d
+    #define RANLUXCL_LUX %(luxuaryFactor)s
     
     
     #ifdef ENABLE_DOUBLE
@@ -129,7 +129,6 @@ inline FLOAT_TYPE potential(DOF_ARGUMENT_DECL)
 {
     return %(potential)s;
 }
-
 //##############################################################################
 //#                             ranlux_init_kernel                             #
 //##############################################################################
@@ -141,7 +140,6 @@ __kernel void ranlux_init_kernel(__global uint *ins,
 {
     ranluxcl_initialization(ins, ranluxcltab);
 }
-
 //##############################################################################
 //#                                ranluxclint                                 #
 //##############################################################################
@@ -177,9 +175,6 @@ randFloat(uint4 *seedPtr)
     return (*seedPtr).w * 2.328306437080797e-10;
 }
 #endif // End of: RANLUX NOT ENABLED
-
-
-
 //##############################################################################
 //#                                kinEnergyEst                                #
 //##############################################################################
@@ -189,7 +184,6 @@ inline FLOAT_TYPE kinEnergyEst (FLOAT_TYPE leftX, FLOAT_TYPE rightX)
     FLOAT_TYPE delta = leftX - rightX;
     return 0.5 * (delta * delta) * %(epsilon_inv2)s;
 }
-
 //##############################################################################
 //#                                doBisectMove                                #
 //##############################################################################
@@ -334,7 +328,6 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
     }
 }
 #endif
-
 //##############################################################################
 //#                                 shiftPathEnergyDiff                        #
 //##############################################################################
@@ -408,8 +401,6 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD FLOAT_TYPE *x, uint degree, FLOAT_TYPE of
 
 }
 #endif
-
-
 //##############################################################################
 //#                                 Histogram                                  #
 //##############################################################################
@@ -466,19 +457,34 @@ metropolis (__global FLOAT_TYPE *paths
 #ifdef ENABLE_BINS
 	    ,__global uint *binCounts
 #endif
+#ifdef ENABLE_RANLUX
+       ,__global ranluxcl_state_t *ranluxcltab
+#endif
         )
 {
 #ifdef ENABLE_PARALELLIZE_PATH
     uint walkerId = get_group_id(0) * %(nbrOfWalkersPerWorkGroup)s + get_local_id(1);
 #endif
     uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
-    //This sets the seeds for the Xorshift PRNG.
+    
+    //This sets the seeds for the PRNG.
     uint4 seed,seedG;
+    
+#ifdef ENABLE_RANLUX
+    //Initialize the ranlux generator
+    ranluxcl_initialization(seeds, ranluxcltab);
+    
+    //ranluxclstate stores the state of the generator.
+    ranluxcl_state_t ranluxclstate;
+
+    //Download state into ranluxclstate struct.
+    ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
+#else
     seed.x = seeds[threadId * 4 + 0];
     seed.y = seeds[threadId * 4 + 1];
     seed.z = seeds[threadId * 4 + 2];
     seed.w = seeds[threadId * 4 + 3];
-
+#endif
     uint lastSeedPos = get_global_size(0) * get_global_size(1)*4;
     seedG.x = seeds[lastSeedPos + 0];
     seedG.y = seeds[lastSeedPos + 1];
@@ -728,10 +734,15 @@ metropolis (__global FLOAT_TYPE *paths
 
     accepts[threadId] = local_accepts;
 
+#ifdef ENABLE_RANLUX
+    //Upload ranlux state for the consequitve runs.
+    ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
+#else
     //Store the current state of the Xorshift PRNG for use in the next
     //kernel run.
     seeds[threadId * 4] = seed.x;
     seeds[threadId * 4 + 1] = seed.y;
     seeds[threadId * 4 + 2] = seed.z;
     seeds[threadId * 4 + 3] = seed.w;
+#endif
 }
