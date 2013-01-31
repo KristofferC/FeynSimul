@@ -52,18 +52,6 @@ __kernel void ranlux_test_kernel_init(__global uint *ins,
     ranluxcl_initialization(ins, ranluxcltab);
 }
 
-inline DATA_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
-                                my_union *random_temp)
-{
-    if((randCount & 3) == 0)
-    {
-        random_temp.vect = DATA_TYPE_F (&ranluxclstate);
-    }
-    
-    
-    return random_temp.a[(randCount++) & 3];
-}
-
 __kernel void ranlux_test_kernel(__global uint *ins,
 #ifdef RETURN_RANDOMS
                                  __global DATA_TYPE *randomsOut,
@@ -123,6 +111,18 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //Upload state again so that we don't get the same
     //numbers over again the next time we use ranluxcl.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
+}
+
+inline DATA_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
+                                my_union *random_temp)
+{
+    if((randCount & 3) == 0)
+    {
+        random_temp.vect = DATA_TYPE_F (&ranluxclstate);
+    }
+    
+    
+    return random_temp.a[(randCount++) & 3];
 }
 #endif
 
