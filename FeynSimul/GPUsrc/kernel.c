@@ -69,7 +69,7 @@
 //#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)
+    #define RANLUXCL_LUX %(luxuaryFactor)d
     
     
     #ifdef ENABLE_DOUBLE
@@ -151,7 +151,6 @@ inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
     return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
 }
 #else // RANLUX NOT ENABLED
-#endif // End of: RANLUX NOT ENABLED
 //##############################################################################
 //#                                 XORSHIFT                                   #
 //##############################################################################
@@ -169,11 +168,13 @@ inline void xorshift (uint4 *seedPtr)
 //##############################################################################
 //Description: This returns a random floating point number by dividing w with
 //             UINT32_MAX (hardcoded).   
-inline FLOAT_TYPE randFloat(uint4 *seedPtr)
+inline FLOAT_TYPE
+randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
 }
+#endif // End of: RANLUX NOT ENABLED
 //##############################################################################
 //#                                kinEnergyEst                                #
 //##############################################################################
@@ -479,12 +480,11 @@ metropolis (__global FLOAT_TYPE *paths
     //Download state into ranluxclstate struct.
     ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
 #else
-#endif
     seed.x = seeds[threadId * 4 + 0];
     seed.y = seeds[threadId * 4 + 1];
     seed.z = seeds[threadId * 4 + 2];
     seed.w = seeds[threadId * 4 + 3];
-    
+#endif
     uint lastSeedPos = get_global_size(0) * get_global_size(1)*4;
     seedG.x = seeds[lastSeedPos + 0];
     seedG.y = seeds[lastSeedPos + 1];
@@ -738,11 +738,11 @@ metropolis (__global FLOAT_TYPE *paths
     //Upload ranlux state for the consequitve runs.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
 #else
-#endif
     //Store the current state of the Xorshift PRNG for use in the next
     //kernel run.
     seeds[threadId * 4] = seed.x;
     seeds[threadId * 4 + 1] = seed.y;
     seeds[threadId * 4 + 2] = seed.z;
     seeds[threadId * 4 + 3] = seed.w;
+#endif
 }
