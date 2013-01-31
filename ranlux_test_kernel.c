@@ -85,8 +85,8 @@ __kernel void ranlux_test_kernel(__global uint *ins,
 
     union my_union
     {
-        FLOAT_TYPE_VECTOR vect;
-        FLOAT_TYPE a[4];
+        DATA_TYPE_V vect;
+        DATA_TYPE a[4];
     };
     
     my_union random_temp;
