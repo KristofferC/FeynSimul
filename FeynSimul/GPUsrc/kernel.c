@@ -39,6 +39,7 @@
 #ifdef ENABLE_DOUBLE
     // Set float precision to double
     #define FLOAT_TYPE double
+    #define FLOAT_TYPE_VECTOR double4
     
     // Check that pragmas for 64bit actually exists
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
@@ -52,6 +53,7 @@
 #else
     // Set float precision to single
     #define FLOAT_TYPE float
+    #define FLOAT_TYPE_VECTOR float4
 #endif
 
 #ifdef ENABLE_GLOBAL_PATH
@@ -74,9 +76,11 @@
     
     #ifdef ENABLE_DOUBLE
         #define RANLUXCL_SUPPORT_DOUBLE
-        #define RAND_FLOAT_FUNCTION ranluxcl64
+        #define RAND_FLOAT_FUNCTION ranluxWrapper
+        #define RANLUX_FUNCTION ranluxc64
     #else
-        #define RAND_FLOAT_FUNCTION ranluxcl32
+        #define RAND_FLOAT_FUNCTION ranluxWrapper
+        #define RANLUX_FUNCTION ranluxc32
     #endif
     
     #include "pyopencl-ranluxcl.cl"
@@ -135,10 +139,10 @@ inline FLOAT_TYPE potential(DOF_ARGUMENT_DECL)
 //Description: Used to initialize and warmup the RANLUX PRNG. Run this as a
 //             separate kernel instance before running the main kernel function.
 #ifdef ENABLE_RANLUX
-__kernel void ranlux_init_kernel(__global uint *ins,
+__kernel void ranlux_init_kernel(__global uint *seeds,
                                  __global ranluxcl_state_t *ranluxcltab)
 {
-    ranluxcl_initialization(ins, ranluxcltab);
+    ranluxcl_initialization(*seeds, ranluxcltab);
 }
 //##############################################################################
 //#                                ranluxclint                                 #
@@ -149,6 +153,30 @@ __kernel void ranlux_init_kernel(__global uint *ins,
 inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
 {
     return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
+}
+//##############################################################################
+//#                                   union                                    #
+//##############################################################################
+//Description: 
+union ranlux_vector_union
+{
+    FLOAT_TYPE_VECTOR ranlux_vector;
+    FLOAT_TYPE ranlux_array[4];
+};
+//##############################################################################
+//#                               ranluxWrapper                                #
+//##############################################################################
+//Description: 
+inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
+                                ranlux_vector_union *random_temp)
+{
+    if(((*randCount) & 3) == 0)
+    {
+        (*random_temp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
+    }
+    
+    
+    return (*random_temp).ranlux_array[((*randCount)++) & 3];
 }
 #else // RANLUX NOT ENABLED
 //##############################################################################
@@ -168,8 +196,7 @@ inline void xorshift (uint4 *seedPtr)
 //##############################################################################
 //Description: This returns a random floating point number by dividing w with
 //             UINT32_MAX (hardcoded).   
-inline FLOAT_TYPE
-randFloat(uint4 *seedPtr)
+inline FLOAT_TYPE randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
@@ -449,16 +476,16 @@ metropolis (__global FLOAT_TYPE *paths
             ,__global FLOAT_TYPE *oldPaths
 #endif
 #ifdef ENABLE_OPERATOR
-           ,__global FLOAT_TYPE *opMeans
+            ,__global FLOAT_TYPE *opMeans
 #endif
 #ifdef ENABLE_CORRELATOR
             ,__global FLOAT_TYPE *corMeans
 #endif
 #ifdef ENABLE_BINS
-	    ,__global uint *binCounts
+	        ,__global uint *binCounts
 #endif
 #ifdef ENABLE_RANLUX
-       ,__global ranluxcl_state_t *ranluxcltab
+            ,__global ranluxcl_state_t *ranluxcltab
 #endif
         )
 {
@@ -467,29 +494,33 @@ metropolis (__global FLOAT_TYPE *paths
 #endif
     uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
     
-    //This sets the seeds for the PRNG.
-    uint4 seed,seedG;
-    
 #ifdef ENABLE_RANLUX
     //Initialize the ranlux generator
-    ranluxcl_initialization(seeds, ranluxcltab);
+    //ranluxcl_initialization(*seeds, ranluxcltab);
     
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
 
     //Download state into ranluxclstate struct.
     ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
+    
+    ranlux_vector_union random_temp;
+    int randCount = 0;
 #else
+    //This sets the seeds for the PRNG.
+    uint4 seed,seedG;
+    
     seed.x = seeds[threadId * 4 + 0];
     seed.y = seeds[threadId * 4 + 1];
     seed.z = seeds[threadId * 4 + 2];
     seed.w = seeds[threadId * 4 + 3];
-#endif
+
     uint lastSeedPos = get_global_size(0) * get_global_size(1)*4;
     seedG.x = seeds[lastSeedPos + 0];
     seedG.y = seeds[lastSeedPos + 1];
     seedG.z = seeds[lastSeedPos + 2];
     seedG.w = seeds[lastSeedPos + 3];
+#endif
 
     uint local_accepts=0;
 
