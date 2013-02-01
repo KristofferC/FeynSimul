@@ -25,37 +25,35 @@ from time import time
 from time import sleep
 import csv
 
-sys.path.append(sys.path[0] + "/../src/")
-from run_params import *
-from host import *
-from pimc_utils import *
+from FeynSimul.pimc_utils import *
 
-sys.path.append(sys.path[0] + "/../src/physical_systems/")
-from lm2m2_3part import *
+from FeynSimul.physical_systems.lm2m2_3part import *
 
-RP = RunParams()
-RP.nbrOfWalkers = 64
-RP.N = 1024 * 64
-RP.getOperator = True
-RP.enablePathShift = False
-RP.enableBisection = True
-RP.enableSingleNodeMove = False
-RP.enableGlobalPath = True
-RP.enableGlobalOldPath = True
-RP.enableParallelizePath = True
-RP.returnBinCounts = False
-RP.beta = 1000
-RP.nbrOfWalkersPerWorkGroup = 4
-
+ka = KernelArgs(nbrOfWalkers = 64,
+                N = 8,
+                enablePathShift = False,
+                enableBisection = True,
+                enableSingleNodeMove = False,
+                enableGlobalPath = True,
+                enableGlobalOldPath = True,
+                enableParallelizePath = True,
+                enableBins = False,
+                enableDouble = False,
+                beta = 1000.0,
+                nbrOfWalkersPerWorkGroup = 4,
+                operatorRuns = 100,
+                enableOperator = True,
+                enableCorrelator = False,
+                metroStepsPerOperatorRun = 40,
+                system = Lm2m2_3part())
 
 # Time to run simul
 endTime = 60 * 60 * 24 * 14
 
 # How often to save paths.
 savePathsInterval = 3000
-systemClass = Lm2m2_3part()
-RP.operators = (systemClass.energyOp, systemClass.meanSquaredRadiusOp
-              , systemClass.meanRadiusOp)
+ka.operators = (ka.system.energyOp, ka.system.meanSquaredRadiusOp
+              , ka.system.meanRadiusOp)
 
 
 def opRunsFormula(N, S):
@@ -65,10 +63,12 @@ def mStepsPerOPRun(N, S):
     return 10
 
 def runsPerN(N, S):
-    return max(RP.N / 8, 10)
+    return max(N / 8, 10)
 
-startXList=np.random.uniform(size=(RP.nbrOfWalkers,systemClass.DOF),low=-1.0,high=1.0)*0.01
+startXList=np.random.uniform(size=(ka.nbrOfWalkers,ka.system.DOF)
+        ,low=-1.0,high=1.0)*0.01
 
 # Run the simulation function
-modN(RP, startXList, savePathsInterval, systemClass, endTime, "lm2m2_3part", opRunsFormula
-     , mStepsPerOPRun, 8, runsPerN, 512)
+modN(ka, startXList, savePathsInterval, "lm2m2_3part", opRunsFormula
+     , mStepsPerOPRun,  runsPerN, 512, simTime=endTime, finalN=1024*64,
+     verbose=True)
