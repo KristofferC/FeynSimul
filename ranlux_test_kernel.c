@@ -27,9 +27,8 @@
 
 
 #ifdef ENABLE_RANLUX
-#include "pyopencl-ranluxcl.cl"
-
 #define RANLUXCL_LUX %(luxuaryFactor)s
+#include "pyopencl-ranluxcl.cl"
 
 inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
 {
@@ -42,14 +41,29 @@ inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
 //{
 //    ranluxcl_initialization(ins, ranluxcltab);
 //}
-
+    
 __kernel void ranlux_test_kernel_init(__global uint *ins,
                                       __global ranluxcl_state_t *ranluxcltab)
 {
-    //ranluxclstate stores the state of the generator.
-    ranluxcl_state_t ranluxclstate;
+    ranluxcl_initialization(*ins, ranluxcltab);
+}
 
-    ranluxcl_initialization(ins, ranluxcltab);
+union my_union
+{
+    DATA_TYPE_V vect;
+    DATA_TYPE a[4];
+};
+
+inline DATA_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
+                               union my_union *random_temp)
+{
+    if(((*randCount) & 3) == 0)
+    {
+        (*random_temp).vect = DATA_TYPE_F (ranluxclstate);
+    }
+    
+    
+    return (*random_temp).a[((*randCount)++) & 3];
 }
 
 __kernel void ranlux_test_kernel(__global uint *ins,
@@ -63,33 +77,35 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
 
+    ranluxcl_initialization(*ins, ranluxcltab);
+
     //Download state into ranluxclstate struct.
     ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
 
     //Generate a float4 with each component on (0,1),
     //end points not included. We can call ranluxcl as many
     //times as we like until we upload the state again.'
+    
     DATA_TYPE randomnr;
 
-    union my_union
-    {
-        DATA_TYPE_V vect;
-        DATA_TYPE a[4];
-    };
-    
-    my_union random_temp;
+    union my_union random_temp;
 
     uint randOffset;
     uint randLocalOffset = threadId * %(randsPerThread)s;
-    int randCount = 1;    
-        
+    int randCount = 0;
+
     for (int i = 0; i <= %(randsPerThread)s; i++)
     {
-        randOffset = randLocalOffset + i;
+        randOffset = randLocalOffset + 4 * i;
         randomnr = ranluxWrapper(&ranluxclstate, &randCount, &random_temp);
+        //randomnr = DATA_TYPE_F (&ranluxclstate);
 
 #ifdef RETURN_RANDOMS
-        randomsOut[randOffset] = randomnr;
+        //randomsOut[randOffset + 0] = randomnr.x;
+        //randomsOut[randOffset + 1] = randomnr.y;
+        //randomsOut[randOffset + 2] = randomnr.z;
+        //randomsOut[randOffset + 3] = randomnr.w;
+        randomsOut[randLocalOffset + i] = randomnr;
 #endif
     /*
     uint randOffset;
@@ -111,18 +127,6 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //Upload state again so that we don't get the same
     //numbers over again the next time we use ranluxcl.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
-}
-
-inline DATA_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
-                                my_union *random_temp)
-{
-    if((randCount & 3) == 0)
-    {
-        random_temp.vect = DATA_TYPE_F (&ranluxclstate);
-    }
-    
-    
-    return random_temp.a[(randCount++) & 3];
 }
 #endif
 

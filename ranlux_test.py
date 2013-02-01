@@ -20,7 +20,7 @@ enableDouble = False
 returnRandoms = True
 enablePlot = False
 printKernelCode = False
-nbrOfWalkers = 448*32*4
+nbrOfWalkers = 448*32
 localSize = None
 globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
@@ -58,9 +58,6 @@ ctx = cl.create_some_context()
 queueProperties = cl.command_queue_properties.PROFILING_ENABLE
 queue = cl.CommandQueue(ctx, properties=queueProperties)
 
-#initKernelCode_r = open(os.path.dirname(__file__) + 'ranlux_init_kernel.c', 'r').read()
-#initKernelCode = initKernelCode_r % replacements
-
 if enableRanlux:
     mf = cl.mem_flags
     dummyBuffer = np.zeros(nbrOfThreads * 28, dtype=np.uint32)
@@ -68,11 +65,6 @@ if enableRanlux:
     ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
 else:
     ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads,4))).astype(np.uint32))
-#prg = (cl.Program(ctx, initKernelCode).build(options=programBuildOptions))
-#kernel = prg.ranlux_init_kernel
-
-#kernelObj = kernel(queue, globalSize, localSize, ins.data, )
-#kernelObj.wait()
 
 kernelCode_r = open(os.path.dirname(__file__) + 'ranlux_test_kernel.c', 'r').read()
 kernelCode = kernelCode_r % replacements
@@ -84,8 +76,8 @@ if printKernelCode:
 
 prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 
-#kernel_1 = prg.ranlux_init_kernel
 
+#kernel_1 = prg.ranlux_test_kernel_init
 #kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, ranluxcltab)
 #kernelObj_1.wait()
 
@@ -93,9 +85,9 @@ prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
 
 
 if enableRanlux:
-    kernel_init = prg.ranlux_test_kernel_init
-    kernelObj_init = kernel_init(queue, globalSize, localSize, ins.data, ranluxcltab)
-    kernelObj_init.wait()
+    #kernel_init = prg.ranlux_test_kernel_init
+    #kernelObj_init = kernel_init(queue, globalSize, localSize, ins.data, ranluxcltab)
+    #kernelObj_init.wait()
     kernel = prg.ranlux_test_kernel
 else:
     kernel = prg.xorshift_test_kernel
@@ -122,6 +114,10 @@ kernelObj.wait()
 if returnRandoms:
     resultingNumbers = randomsOut.get()
 
+print resultingNumbers[0:100]
+#for i in range(0,len(resultingNumbers)):
+#    if resultingNumbers[0] == resultingNumbers[i]:
+#        print i
 
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
 print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)
@@ -143,7 +139,7 @@ if returnRandoms:
         print 'Mean: %f \t(normed: %f)' % (np.mean(resultingNumbers, dtype=np.float64), (np.mean(resultingNumbers, dtype=np.float64)/float(ranluxIntMax)))
         print 'Normed Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % ((np.std(resultingNumbers, dtype=np.float64)/float(ranluxIntMax)), (1.0/np.sqrt(12)))
     else:
-        print 'Mean: %f' % np.mean(resultingNumbers, dtype=np.float64)
+        print 'Mean: %.8f' % np.mean(resultingNumbers, dtype=np.float64)
         print 'Standard deviation: %f (expected from uniformly dist: 1/sqrt(12) = %f)' % (np.std(resultingNumbers, dtype=np.float64), (1.0/np.sqrt(12)))
 
 if enablePlot and returnRandoms:
