@@ -71,7 +71,7 @@
 //#                            RANLUX definitions                              #
 //##############################################################################
 #ifdef ENABLE_RANLUX
-    #define RANLUXCL_LUX %(luxuaryFactor)d
+    #define RANLUXCL_LUX %(luxuaryFactor)s
     
     
     #ifdef ENABLE_DOUBLE
@@ -167,14 +167,14 @@ union ranlux_vector_union
 //#                               ranluxWrapper                                #
 //##############################################################################
 //Description: 
-inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
+inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate,
+                                int *randCount,
                                 ranlux_vector_union *random_temp)
 {
     if(((*randCount) & 3) == 0)
     {
         (*random_temp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
     }
-    
     
     return (*random_temp).ranlux_array[((*randCount)++) & 3];
 }

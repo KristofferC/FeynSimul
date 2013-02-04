@@ -329,6 +329,11 @@ class PIMCKernel:
             replacements['luxuaryFactor'] = '%d' % self._luxuaryFactor
         if self._enableRanlux and self._ranluxIntMax > 0:
             replacements['ranluxIntMax'] = '%s' % (str('%.9E' % self._ranluxIntMax) + 'f')
+        
+        if self._enableRanlux:
+            replacements['rand_float_arg'] = "&ranluxclstate, &randCount, &random_temp"        
+        else:
+            replacements['rand_float_arg'] = "&seed"
 
         if self._enableBins:
             replacements['xMin'] = '%1.17e' % self._xMin
