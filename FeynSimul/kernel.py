@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with FeynSimul.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import numpy as np
 from time import time
 from collections import defaultdict
@@ -49,7 +50,7 @@ class PIMCKernel:
     methods to fetch data from the simulation after it has been run.
     """
 
-    def __init__(self, ka):
+    def __init__(self, ka, verbose=False):
         """
         Loads the kernel to the GPU and readies it to be run.
 
@@ -60,6 +61,8 @@ class PIMCKernel:
         :type ka: :class:`kernel_args.kernelArgs` class
         :param ka: An instance of kernelArgs describing what kind of
                    kernel to build.
+        
+        ka.potential*ka.beta should give the energy/(kb T) (dimensionless).
         """
 
         self._enableBins = ka.enableBins
@@ -350,10 +353,10 @@ class PIMCKernel:
         kernelCode = kernelCode_r % replacements
         """ String containing the kernel code that will be sent to the GPU. """
 
-        # Possibility of printing the openCL code after the preprocessor has run
-        printCleaned = False
-        if printCleaned:
+        if verbose:
             import commands
+            with open('cleaned.c','w') as f:
+                f.write(kernelCode)
             preprocessedCode = commands.getstatusoutput('echo "' +
                     kernelCode + '" | cpp')[1]
             cleanedPreprocessedCode = ""
@@ -361,7 +364,9 @@ class PIMCKernel:
                 if len(i) > 0:
                     if i[0] != '#':
                         cleanedPreprocessedCode += i + '\n'
-            print cleanedPreprocessedCode
+            with open('preprocessed.c','w') as f:
+                f.write(cleanedPreprocessedCode)
+            print('Saved cleaned and preprocessed code in cleaned.c and preprocessed.c')
 
         #Create the OpenCL context and command queue
         self._ctx = cl.create_some_context()
@@ -595,7 +600,10 @@ class PIMCKernel:
         else:
             _numBytes = 4
         usedGlobalMemory = 0
-        usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
+        if self._enableRanlux:
+            usedGlobalMemory += (self._nbrOfThreads + 1) * 4  # seeds
+        else:
+            usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
         usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers * self._N *
                              self._system.DOF * _numBytes)  # path

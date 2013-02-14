@@ -3,8 +3,9 @@
 #ifdef ENABLE_DOUBLE
     #define DATA_TYPE double
     #define DATA_TYPE_V double4
-    #define DATA_TYPE_F ranluxcl64
+    #define DATA_TYPE_F ranluxcl64(ranluxclstate)
     #define FLOAT_TYPE double
+    #define FLOAT_TYPE_V double4
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     
     #ifdef ENABLE_RANLUX
@@ -14,14 +15,16 @@
     #ifdef USE_RANLUXCL_INT
         #define DATA_TYPE uint
         #define DATA_TYPE_V uint4
-        #define DATA_TYPE_F ranluxclint
+        #define RANLUX_WRAPPER ranluxIntWrapper(&ranluxclstate, &randCount, &random_temp)
     #else
         #define DATA_TYPE float
         #define DATA_TYPE_V float4
-        #define DATA_TYPE_F ranluxcl32
+        #define RANLUX_WRAPPER ranluxWrapper(&ranluxclstate, &randCount, &random_temp)
     #endif
     
+    #define DATA_TYPE_F ranluxcl32(ranluxclstate)
     #define FLOAT_TYPE float
+    #define FLOAT_TYPE_V float4
 #endif
 
 
@@ -35,7 +38,6 @@ inline uint4 ranluxclint(ranluxcl_state_t *ranluxclstate)
     return convert_uint4(ranluxcl32(ranluxclstate) * (float4) %(ranluxIntMax)s);
 }
 
-
 //__kernel void ranlux_init_kernel(__global uint *ins,
 //                                 __global ranluxcl_state_t *ranluxcltab)
 //{
@@ -48,22 +50,35 @@ __kernel void ranlux_test_kernel_init(__global uint *ins,
     ranluxcl_initialization(*ins, ranluxcltab);
 }
 
-union my_union
+union ranlux_vector_union
 {
-    DATA_TYPE_V vect;
-    DATA_TYPE a[4];
+    FLOAT_TYPE_V ranlux_vector;
+    FLOAT_TYPE ranlux_array[4];
 };
 
-inline DATA_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate, int *randCount,
-                               union my_union *random_temp)
+inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate,
+                                uint *randCount,
+                                union ranlux_vector_union *random_temp)
 {
     if(((*randCount) & 3) == 0)
     {
-        (*random_temp).vect = DATA_TYPE_F (ranluxclstate);
+        (*random_temp).ranlux_vector = DATA_TYPE_F;// (ranluxclstate);
     }
     
     
-    return (*random_temp).a[((*randCount)++) & 3];
+    return (*random_temp).ranlux_array[((*randCount)++) & 3];
+}
+
+inline int ranluxIntWrapper(ranluxcl_state_t *ranluxclstate,
+                            uint *randCount,
+                            union ranlux_vector_union *random_temp)
+{
+    if(((*randCount) & 3) == 0)
+    {
+        (*random_temp).ranlux_vector = DATA_TYPE_F;// (ranluxclstate);
+    }
+    
+    return (uint) ((*random_temp).ranlux_array[((*randCount)++) & 3] * ((FLOAT_TYPE) %(ranluxIntMax)s));
 }
 
 __kernel void ranlux_test_kernel(__global uint *ins,
@@ -88,16 +103,16 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     
     DATA_TYPE randomnr;
 
-    union my_union random_temp;
+    union ranlux_vector_union random_temp;
 
     uint randOffset;
     uint randLocalOffset = threadId * %(randsPerThread)s;
-    int randCount = 0;
+    uint randCount = 0;
 
     for (int i = 0; i <= %(randsPerThread)s; i++)
     {
         randOffset = randLocalOffset + 4 * i;
-        randomnr = ranluxWrapper(&ranluxclstate, &randCount, &random_temp);
+        randomnr = RANLUX_WRAPPER; // (&ranluxclstate, &randCount, &random_temp);
         //randomnr = DATA_TYPE_F (&ranluxclstate);
 
 #ifdef RETURN_RANDOMS

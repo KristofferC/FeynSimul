@@ -14,8 +14,8 @@ import pyopencl.clmath
 
 luxuaryFactor = 2
 enableRanlux = True
-useRanluxInt = False
-ranluxIntMax = 2**24
+useRanluxInt = True
+ranluxIntMax = 2**32-1
 enableDouble = False
 returnRandoms = True
 enablePlot = False
@@ -118,6 +118,7 @@ print resultingNumbers[0:100]
 #for i in range(0,len(resultingNumbers)):
 #    if resultingNumbers[0] == resultingNumbers[i]:
 #        print i
+print np.max(resultingNumbers)
 
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
 print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)
