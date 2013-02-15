@@ -34,13 +34,17 @@
 //#                                 Defines                                    #
 //##############################################################################
 //Description: This is a placeholder for defines used in the program.
+
+%(defines)s
+
 #ifdef ENABLE_DOUBLE
+    // Check that pragmas for 64bit actually exists
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
     // Set float precision to double
     #define FLOAT_TYPE double
     #define FLOAT_TYPE_VECTOR double4
     
-    // Check that pragmas for 64bit actually exists
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     //#ifdef cl_khr_fp64
     //    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     //#elif defined(cl_amd_fp64)
@@ -54,7 +58,6 @@
     #define FLOAT_TYPE_VECTOR float4
 #endif
 
-%(defines)s
 
 #ifdef ENABLE_GLOBAL_PATH
 	#define PATH_TYPE_KEYWORD __global
@@ -337,7 +340,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
                 else
                 {
                     rz = sigmaN[n] * sqrt (-2.0 * log (v))
-                        * sin (2.0 * %(PI)s * u);
+                        * sin (2.0 * M_PI * u);
                 }
 
                 // Do the actual moving of node by averaging nodes to right and left
@@ -676,7 +679,7 @@ metropolis (__global FLOAT_TYPE *paths
             local_path[modPathPoint] = oldX;
 
             //Determine whether or not to accept the change in the path.
-            if (native_exp(-%(epsilon)s*diffE) > RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG)) //randFloat(&seed))
+            if (exp(-%(epsilon)s*diffE) > RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG)) //randFloat(&seed))
             {
                 local_path[modPathPoint] = modX;
                 local_accepts++;

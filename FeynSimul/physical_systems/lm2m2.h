@@ -55,24 +55,26 @@ FLOAT_TYPE lm2m2sqrt(FLOAT_TYPE sr)
     FLOAT_TYPE F_times_rational;
     if(x<D)
     {
-            if(x>0.0005/rm)
-                    F_times_rational=exp(-(D/x-1.0)*(D/x-1.0))*(c6/x6+c8/x8+c10/x10);
-            else
-                    F_times_rational=0.0;
+        if(x>0.0005/rm)
+        {
+            F_times_rational=exp(-(D/x-1.0)*(D/x-1.0))*(c6/x6+c8/x8+c10/x10);
+        } else {
+            F_times_rational=0.0;
+        }
+    } else {
+        F_times_rational=c6/x6+c8/x8+c10/x10;
     }
-    else
-            F_times_rational=c6/x6+c8/x8+c10/x10;
     FLOAT_TYPE Vb_star=A*exp(-alpha*x+beta*x2)-F_times_rational;
 
     //Va_star=addon potential, reduced form
     //source: JChemPhys_94_8047.pdf
     FLOAT_TYPE Va_star;
     if(x<xa1 || x>xa2)
-        Va_star=0.0;
-    else
     {
+        Va_star=0.0;
+    } else {
         FLOAT_TYPE B=2.0*M_PI/(xa2-xa1);
-        Va_star=Aa*(sin(B*(x-xa1)-M_PI/2.0)+1.0);
+        Va_star=Aa*(sin(B*(x-xa1)-M_PI_2)+1.0);
     }
     
     return epsilon_over_k*(Vb_star+Va_star);
@@ -119,24 +121,26 @@ FLOAT_TYPE dlm2m2sqrtdr(FLOAT_TYPE sr)
     if(x<D)
     {
         if(x>0.0005/rm)
+        {
             dF_times_rationaldx=exp(-(D/x-1.0)*(D/x-1.0))*(-6.0*c6/x7-8.0*c8/x9-10.0*c10/x11)+
                 exp(-(D/x-1.0)*(D/x-1.0))*(-2.0*(D/x-1.0)*(-D/x2))*(c6/x6+c8/x8+c10/x10);
-        else
+        } else {
             dF_times_rationaldx=0.0;
+        }
+    } else {
+        dF_times_rationaldx=-6.0*c6/x7-8.0*c8/x9-10.0*c10/x11;
     }
-    else
-            dF_times_rationaldx=-6.0*c6/x7-8.0*c8/x9-10.0*c10/x11;
     FLOAT_TYPE dVb_stardx=A*exp(-alpha*x+beta*x2)*(-alpha+beta*2.0*x)-dF_times_rationaldx;
 
     //Va_star=addon potential, reduced form
     //source: JChemPhys_94_8047.pdf
     FLOAT_TYPE dVa_stardx;
     if(x<xa1 || x>xa2)
-        dVa_stardx=0.0;
-    else
     {
+        dVa_stardx=0.0;
+    } else {
         FLOAT_TYPE B=2.0*M_PI/(xa2-xa1);
-        dVa_stardx=Aa*(cos(B*(x-xa1)-M_PI/2.0)*B+1.0);
+        dVa_stardx=Aa*(cos(B*(x-xa1)-M_PI_2)*B+1.0);
     }
     
     return epsilon_over_k*(dVb_stardx+dVa_stardx)/(rm*2.0*r);//..*2.0*r) because of sqrt

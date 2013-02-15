@@ -4,7 +4,7 @@ import sympy
 from sympy.utilities.codegen import codegen
 
 class Lm2m2_cluster:
-    def __init__(self,n,T,useJacobi=True,simplify=True,verbose=False):
+    def __init__(self,n,T,useJacobi=True,simplify=True,verbose=False,enableDouble=False):
         #kernel beta of 1000 gives real temp of 15 mK
         d=3 #we are living in 3 space-like dimensions
         if useJacobi:
@@ -49,10 +49,13 @@ class Lm2m2_cluster:
                         if s[k-3:k]==', 2':
                             s=s[:i]+'sqr'+s[i+3:k-3]+s[k:]
                 return s
-            def toCode(expr):
+            def toCode(expr,enableDouble):
                 [(sourceFilename,source),(headerFilenam,header)]=codegen(
                         ('funName',expr),'C','codeGened',header=False)
-                code=pow2ToSqr(source).replace('double','float')
+                if enableDouble:
+                    code=pow2ToSqr(source)                
+                else:
+                    code=pow2ToSqr(source).replace('double','float')
                 code=code[code.find('return')+6:]
                 code=code[:code.find(';')]
                 return code
@@ -79,13 +82,13 @@ class Lm2m2_cluster:
             self.symMSROp = sympy.simplify(jacobi.toJacobiCoord([self.symMSROp],rm,mm,xm)[0])
             
             if verbose: print('Generating C-code for potential...')
-            self.potential=toCode(self.symPotential) 
+            self.potential=toCode(self.symPotential, enableDouble) 
             
             if verbose: print('Generating C-code for energy operator...')
-            self.energyOp=toCode(self.symEnergyOp)
+            self.energyOp=toCode(self.symEnergyOp, enableDouble)
 
             if verbose: print('Generating C-code for MSR operator...')
-            self.meanSquaredRadiusOp=toCode(self.symMSROp)
+            self.meanSquaredRadiusOp=toCode(self.symMSROp, enableDouble)
         else:
             raise Exception("disablement of simplify isn't implemented yet")
         with open('FeynSimul/physical_systems/lm2m2.h','r') as f:

@@ -234,6 +234,9 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                     print("Paths saved!")
             nRuns += 1
 
+        with open("results/" + experimentName + "/" + timestamp +
+                 "/timestamps", 'ab') as f2:
+            f2.write(str(kaMod.N) + ': ' + str(time()-startClock) + '\n')
         #do preparations for next run that are not to be done first run
         if kaMod.N != finalN:
             oldPaths = kernel.getPaths()

@@ -333,11 +333,6 @@ class PIMCKernel:
         if self._enableRanlux and self._ranluxIntMax > 0:
             replacements['ranluxIntMax'] = '%s' % (str('%.9E' % self._ranluxIntMax) + 'f')
         
-        if self._enableRanlux:
-            replacements['rand_float_arg'] = "&ranluxclstate, &randCount, &random_temp"        
-        else:
-            replacements['rand_float_arg'] = "&seed"
-
         if self._enableBins:
             replacements['xMin'] = '%1.17e' % self._xMin
             replacements['xMax'] = '%1.17e' % self._xMax
@@ -374,7 +369,7 @@ class PIMCKernel:
         self._queue = cl.CommandQueue(self._ctx,
                                            properties=queueProperties)
 
-        programBuildOptions = "-cl-fast-relaxed-math"
+        programBuildOptions = "-cl-fast-relaxed-math -cl-mad-enable"
         if not self._enableDouble:
             programBuildOptions += " -cl-single-precision-constant"
 
@@ -404,7 +399,7 @@ class PIMCKernel:
                 #Seeds for RANLUX initialization
                 self._seeds = cl.array.to_device(self._queue,
                                  (np.random.randint(0, high = 2 ** 31 - 1,
-                                  size = (self._nbrOfThreads))
+                                  size = (self._nbrOfThreads + 1, 4))
                                   ).astype(np.uint32))
             else:
                 #seeds for xorshift: np.random.seed(0)
