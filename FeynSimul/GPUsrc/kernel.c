@@ -71,7 +71,7 @@
 
 
 //##############################################################################
-//#                            RANLUX definitions                              #
+//#                          Rand-func definitions                             #
 //##############################################################################
 #ifdef ENABLE_RANLUX
     #define RANLUXCL_LUX %(luxuaryFactor)s
@@ -87,7 +87,7 @@
     #endif
     
     
-    #include "pyopencl-ranluxcl.cl"
+    #include <pyopencl-ranluxcl.cl>
     #define RAND_FUNCTION_ARG &ranluxclstate, &randCount, &random_temp
     #define RAND_FUNCTION_ARG_PTR ranluxclstate, randCount, random_temp
     #define RAND_INT_FUNCTION ranluxIntWrapper
@@ -529,7 +529,7 @@ metropolis (__global FLOAT_TYPE *paths
     
 #ifdef ENABLE_RANLUX
     //Initialize the ranlux generator
-    ranluxcl_initialization(*seeds, ranluxcltab);
+    //ranluxcl_initialization(*seeds, ranluxcltab);
     
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
@@ -555,6 +555,7 @@ metropolis (__global FLOAT_TYPE *paths
     seedG.w = seeds[lastSeedPos + 3];
 #endif
 
+    
     uint local_accepts=0;
 
 #ifdef ENABLE_PATH_SHIFT

@@ -1,12 +1,14 @@
 %(defines)s
 
 #ifdef ENABLE_DOUBLE
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    
     #define DATA_TYPE double
     #define DATA_TYPE_V double4
     #define DATA_TYPE_F ranluxcl64(ranluxclstate)
     #define FLOAT_TYPE double
     #define FLOAT_TYPE_V double4
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    #define RANLUX_WRAPPER ranluxWrapper(&ranluxclstate, &randCount, &random_temp)
     
     #ifdef ENABLE_RANLUX
         #define RANLUXCL_SUPPORT_DOUBLE
@@ -92,7 +94,7 @@ __kernel void ranlux_test_kernel(__global uint *ins,
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
 
-    ranluxcl_initialization(*ins, ranluxcltab);
+    //ranluxcl_initialization(*ins, ranluxcltab);
 
     //Download state into ranluxclstate struct.
     ranluxcl_download_seed(&ranluxclstate, ranluxcltab);

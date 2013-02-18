@@ -21,14 +21,14 @@ returnRandoms = True
 enablePlot = False
 printKernelCode = False
 nbrOfWalkers = 448*32
-localSize = None
+localSize = (32,)
 globalSize = (nbrOfWalkers,)
 nbrOfThreads = nbrOfWalkers
 randsPerThread = 1000 # must be a multiple of 4!
 
 defines = ""
 
-programBuildOptions = "-cl-fast-relaxed-math"
+programBuildOptions = "-cl-fast-relaxed-math -cl-nv-verbose"
 
 if enableDouble:
     defines += "#define ENABLE_DOUBLE\n"
@@ -60,9 +60,8 @@ queue = cl.CommandQueue(ctx, properties=queueProperties)
 
 if enableRanlux:
     mf = cl.mem_flags
-    dummyBuffer = np.zeros(nbrOfThreads * 28, dtype=np.uint32)
+    dummyBuffer = cl.array.to_device(queue, np.zeros(nbrOfThreads * 28, dtype=np.uint32))
     ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads))).astype(np.uint32))
-    ranluxcltab = cl.Buffer(ctx, mf.READ_WRITE, size=0, hostbuf=dummyBuffer)
 else:
     ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads,4))).astype(np.uint32))
 
@@ -74,15 +73,11 @@ if printKernelCode:
     print kernelCode
     print '-'*20
 
-prg = (cl.Program(ctx, kernelCode).build(options=programBuildOptions))
+prg = (cl.Program(ctx, kernelCode).build(options=["-I", "."]))
 
-
-#kernel_1 = prg.ranlux_test_kernel_init
-#kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, ranluxcltab)
-#kernelObj_1.wait()
-
-
-
+kernel_1 = prg.ranlux_test_kernel_init
+kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, dummyBuffer.data)
+kernelObj_1
 
 if enableRanlux:
     #kernel_init = prg.ranlux_test_kernel_init
@@ -100,12 +95,12 @@ if returnRandoms:
         
         
     if enableRanlux:
-        kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, ranluxcltab)
+        kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, dummyBuffer.data)
     else:
         kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data)
 else:
     if enableRanlux:
-        kernelObj = kernel(queue, globalSize, localSize, ins.data, ranluxcltab)
+        kernelObj = kernel(queue, globalSize, localSize, ins.data, dummyBuffer.data)
     else:
         kernelObj = kernel(queue, globalSize, localSize, ins.data)
 
@@ -113,12 +108,11 @@ kernelObj.wait()
 
 if returnRandoms:
     resultingNumbers = randomsOut.get()
-
-print resultingNumbers[0:100]
+    for i in range(0,100):
+        print str(i) + ':' + str(resultingNumbers[i*1000+1]),
 #for i in range(0,len(resultingNumbers)):
 #    if resultingNumbers[0] == resultingNumbers[i]:
 #        print i
-print np.max(resultingNumbers)
 
 print '--- Running %d threads with %d random numbers per thread ---' % (nbrOfThreads, randsPerThread)
 print 'Total number of rands: %d' % (nbrOfThreads * randsPerThread)

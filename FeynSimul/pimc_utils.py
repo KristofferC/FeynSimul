@@ -153,9 +153,16 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
     
    
 
-    
+    with open("results/" + experimentName + "/" + timestamp +
+              "/systemInfo", 'ab') as f_info:
+        f_info.write('')
+        # Start time
+        # System
+        # Particle amount
+        # Temperature
+        
     firstNRun = True
-
+    totRuns = 0
     while finalN == -1 or kaMod.N <= finalN:
         # Make sure S is large enough to not use too many walkers in a WG
         #while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
@@ -177,6 +184,8 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
 
         # If not first run create a new path by interpolating
         if firstNRun:
+            if ka.enableRanlux:
+                kernel.initRanlux()
             if not continueRun:
                 initialPaths = np.zeros((ka.nbrOfWalkers, kaMod.N * kaMod.system.DOF))
                 for i in range(ka.nbrOfWalkers):
@@ -233,10 +242,11 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                 if verbosity>0:
                     print("Paths saved!")
             nRuns += 1
+            totRuns += 1
 
         with open("results/" + experimentName + "/" + timestamp +
                  "/timestamps", 'ab') as f2:
-            f2.write(str(kaMod.N) + ': ' + str(time()-startClock) + '\n')
+            f2.write('N='+str(kaMod.N)+', totRuns='+str(totRuns)+': '+str(time()-startClock)+'\n')
         #do preparations for next run that are not to be done first run
         if kaMod.N != finalN:
             oldPaths = kernel.getPaths()

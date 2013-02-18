@@ -19,7 +19,7 @@ inline FLOAT_TYPE sqr(FLOAT_TYPE x)
     return x*x;
 }                 
 //The following functions take r in Angstrom and return energy in K
-FLOAT_TYPE lm2m2sqrt(FLOAT_TYPE sr)
+inline FLOAT_TYPE lm2m2sqrt(FLOAT_TYPE sr)
 {
     //source: physics.nist.gov
     FLOAT_TYPE k=8.6173324e-5; //eV/K boltzmann constant, 
@@ -80,7 +80,7 @@ FLOAT_TYPE lm2m2sqrt(FLOAT_TYPE sr)
     return epsilon_over_k*(Vb_star+Va_star);
 }
 
-FLOAT_TYPE dlm2m2sqrtdr(FLOAT_TYPE sr)
+inline FLOAT_TYPE dlm2m2sqrtdr(FLOAT_TYPE sr)
 {
     //source: physics.nist.gov
     FLOAT_TYPE k=8.6173324e-5; //eV/K boltzmann constant, 
