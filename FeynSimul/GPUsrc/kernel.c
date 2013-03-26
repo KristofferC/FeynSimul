@@ -88,10 +88,10 @@
     
     
     #include <pyopencl-ranluxcl.cl>
-    #define RAND_FUNCTION_ARG &ranluxclstate, &randCount, &random_temp
-    #define RAND_FUNCTION_ARG_PTR ranluxclstate, randCount, random_temp
+    #define RAND_FUNCTION_ARG &ranluxclstate, &randCount, &randomTemp
+    #define RAND_FUNCTION_ARG_PTR ranluxclstate, randCount, randomTemp
     #define RAND_INT_FUNCTION ranluxIntWrapper
-    #define RAND_INT_FUNCTION_ARG &ranluxclstate, &randCount, &random_temp
+    #define RAND_INT_FUNCTION_ARG &groupRanluxclstate, &intRandCount, &intRandomTemp
 #else
     #define RAND_FLOAT_FUNCTION randFloat
     #define RAND_FUNCTION_ARG &seed
@@ -143,16 +143,26 @@ inline FLOAT_TYPE potential(DOF_ARGUMENT_DECL)
 {
     return %(potential)s;
 }
+#ifdef ENABLE_RANLUX
 //##############################################################################
 //#                             ranlux_init_kernel                             #
 //##############################################################################
 //Description: Used to initialize and warmup the RANLUX PRNG. Run this as a
 //             separate kernel instance before running the main kernel function.
-#ifdef ENABLE_RANLUX
 __kernel void ranlux_init_kernel(__global uint *seeds,
                                  __global ranluxcl_state_t *ranluxcltab)
 {
-    ranluxcl_initialization(*seeds, ranluxcltab);
+    ranluxcl_init((ulong) *seeds, ranluxcltab + (get_global_id(0) + get_global_id(1) * get_global_size(0) + get_global_id(2) * get_global_size(0) * get_global_size(1)));
+}
+//##############################################################################
+//#                          ranlux_group_init_kernel                          #
+//##############################################################################
+//Description: Used to initialize and warmup the RANLUX PRNG. Run this as a
+//             separate kernel instance before running the main kernel function.
+__kernel void ranlux_group_init_kernel(__global uint *groupSeeds,
+                                       __global ranluxcl_state_t *groupRanluxcltab)
+{
+    ranluxcl_init((ulong) *(groupSeeds + get_group_id(0) + (get_global_id(1) * get_global_size(0)) / get_local_size(0)), groupRanluxcltab + (get_global_id(0) + get_global_id(1) * get_global_size(0) + get_global_id(2) * get_global_size(0) * get_global_size(1)));
 }
 //##############################################################################
 //#                                   union                                    #
@@ -169,14 +179,14 @@ union ranlux_vector_union
 //Description: 
 inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate,
                                 uint *randCount,
-                                union ranlux_vector_union *random_temp)
+                                union ranlux_vector_union *randomTemp)
 {
     if(((*randCount) & 3) == 0)
     {
-        (*random_temp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
+        (*randomTemp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
     }
     
-    return (*random_temp).ranlux_array[((*randCount)++) & 3];                                               // <---------
+    return (*randomTemp).ranlux_array[((*randCount)++) & 3];                                               // <---------
 }
 //##############################################################################
 //#                             ranluxIntWrapper                               #
@@ -186,14 +196,14 @@ inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate,
 //             other ranlux functions
 inline uint ranluxIntWrapper(ranluxcl_state_t *ranluxclstate,
                             uint *randCount,
-                            union ranlux_vector_union *random_temp)
+                            union ranlux_vector_union *randomTemp)
 {
     if(((*randCount) & 3) == 0)
     {
-        (*random_temp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
+        (*randomTemp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
     }
     
-    return (uint) ((*random_temp).ranlux_array[((*randCount)++) & 3] * ((FLOAT_TYPE) %(ranluxIntMax)s));     // <---------
+    return (uint) ((*randomTemp).ranlux_array[((*randCount)++) & 3] * ((FLOAT_TYPE) %(ranluxIntMax)s));     // <---------
 }
 #else // RANLUX NOT ENABLED
 //##############################################################################
@@ -253,7 +263,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
 #ifdef ENABLE_RANLUX
                          ranluxcl_state_t *ranluxclstate,
                          uint *randCount,
-                         union ranlux_vector_union *random_temp,
+                         union ranlux_vector_union *randomTemp,
 #else
                          uint4 *seedPtr,
 #endif
@@ -504,7 +514,9 @@ histogram (PATH_TYPE_KEYWORD FLOAT_TYPE *local_path, __global uint *binCounts)
 __kernel void
 metropolis (__global FLOAT_TYPE *paths
             ,__global uint *accepts
+#ifndef ENABLE_RANLUX
             ,__global uint *seeds
+#endif
 #ifdef ENABLE_GLOBAL_OLD_PATH
             ,__global FLOAT_TYPE *oldPaths
 #endif
@@ -519,6 +531,7 @@ metropolis (__global FLOAT_TYPE *paths
 #endif
 #ifdef ENABLE_RANLUX
             ,__global ranluxcl_state_t *ranluxcltab
+            ,__global ranluxcl_state_t *groupRanluxcltab
 #endif
         )
 {
@@ -533,12 +546,16 @@ metropolis (__global FLOAT_TYPE *paths
     
     //ranluxclstate stores the state of the generator.
     ranluxcl_state_t ranluxclstate;
+    ranluxcl_state_t groupRanluxclstate;
 
     //Download state into ranluxclstate struct.
     ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
+    ranluxcl_download_seed(&groupRanluxclstate, groupRanluxcltab);
     
-    union ranlux_vector_union random_temp;
+    union ranlux_vector_union randomTemp;
+    union ranlux_vector_union intRandomTemp;
     uint randCount = 0;
+    uint intRandCount = 0;
 #else
     //This sets the seeds for the PRNG.
     uint4 seed,seedG;
@@ -548,7 +565,7 @@ metropolis (__global FLOAT_TYPE *paths
     seed.z = seeds[threadId * 4 + 2];
     seed.w = seeds[threadId * 4 + 3];
 
-    uint lastSeedPos = get_global_size(0) * get_global_size(1)*4;
+    uint lastSeedPos = (get_group_id(0) + get_global_id(1) * get_global_size(0) / get_local_size(0))*4; //get_global_size(0) * get_global_size(1)*4;
     seedG.x = seeds[lastSeedPos + 0];
     seedG.y = seeds[lastSeedPos + 1];
     seedG.z = seeds[lastSeedPos + 2];
@@ -808,6 +825,7 @@ metropolis (__global FLOAT_TYPE *paths
 #ifdef ENABLE_RANLUX
     //Upload ranlux state for the consequitve runs.
     ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
+    ranluxcl_upload_seed(&groupRanluxclstate, groupRanluxcltab);
 #else
     //Store the current state of the Xorshift PRNG for use in the next
     //kernel run.

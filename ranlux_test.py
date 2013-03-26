@@ -14,17 +14,19 @@ import pyopencl.clmath
 
 luxuaryFactor = 2
 enableRanlux = True
-useRanluxInt = True
+useRanluxInt = False
 ranluxIntMax = 2**32-1
 enableDouble = False
 returnRandoms = True
 enablePlot = False
 printKernelCode = False
-nbrOfWalkers = 448*32
-localSize = (32,)
-globalSize = (nbrOfWalkers,)
-nbrOfThreads = nbrOfWalkers
-randsPerThread = 1000 # must be a multiple of 4!
+nbrOfWalkers = 8
+ydim = 2
+groupSize = 2
+localSize = (groupSize,ydim)
+globalSize = (nbrOfWalkers,ydim)
+nbrOfThreads = nbrOfWalkers * ydim
+randsPerThread = 1 # must be a multiple of 4!
 
 defines = ""
 
@@ -61,7 +63,7 @@ queue = cl.CommandQueue(ctx, properties=queueProperties)
 if enableRanlux:
     mf = cl.mem_flags
     dummyBuffer = cl.array.to_device(queue, np.zeros(nbrOfThreads * 28, dtype=np.uint32))
-    ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads))).astype(np.uint32))
+    ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads/groupSize))).astype(np.uint32))
 else:
     ins = cl.array.to_device(queue, (np.random.randint(0, high = 2 ** 31 - 1, size = (nbrOfThreads,4))).astype(np.uint32))
 
@@ -77,8 +79,8 @@ prg = (cl.Program(ctx, kernelCode).build(options=["-I", "."]))
 
 kernel_1 = prg.ranlux_test_kernel_init
 kernelObj_1 = kernel_1(queue, globalSize, localSize, ins.data, dummyBuffer.data)
-kernelObj_1
-
+kernelObj_1.wait()
+queue.finish()
 if enableRanlux:
     #kernel_init = prg.ranlux_test_kernel_init
     #kernelObj_init = kernel_init(queue, globalSize, localSize, ins.data, ranluxcltab)
@@ -86,16 +88,16 @@ if enableRanlux:
     kernel = prg.ranlux_test_kernel
 else:
     kernel = prg.xorshift_test_kernel
-
 if returnRandoms:
     if useRanluxInt and enableRanlux:
         randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.uint32)
     else:
         randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.float64 if enableDouble else np.float32)
-        
+        randCountG = cl.array.zeros(queue, nbrOfThreads, np.uint32)
         
     if enableRanlux:
-        kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, dummyBuffer.data)
+        testOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, np.uint32)
+        #kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, testOut.data, dummyBuffer.data, randCountG.data)
     else:
         kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data)
 else:
@@ -104,12 +106,40 @@ else:
     else:
         kernelObj = kernel(queue, globalSize, localSize, ins.data)
 
-kernelObj.wait()
-
-if returnRandoms:
-    resultingNumbers = randomsOut.get()
-    for i in range(0,100):
-        print str(i) + ':' + str(resultingNumbers[i*1000+1]),
+#print dummyBuffer.get()
+for i in range(0,8):
+    """
+    ins = cl.array.to_device(queue,ins.get(),np.uint32)
+    randomsOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, dtype=np.uint32)
+    testOut = cl.array.zeros(queue, nbrOfThreads * randsPerThread, dtype=np.uint32)
+    dummyBuffer = cl.array.to_device(queue, dummyBuffer.get(), dtype=np.uint32)
+    randCountG = cl.array.to_device(queue, randCountG.get(), dtype=np.uint32)
+    """
+    kernelObj = kernel(queue, globalSize, localSize, ins.data, randomsOut.data, testOut.data, dummyBuffer.data, randCountG.data)
+    kernelObj.wait()
+    queue.finish()
+    if returnRandoms:
+        resultingNumbers = randomsOut.get()
+        resultingTest = testOut.get()
+        if len(resultingTest) == len(resultingNumbers):
+            for i in randCountG.get():
+                print i, 
+            print '\n',
+            #for i in ins.get():
+            #    print i, 
+            #print '\n',
+            for i in resultingTest:
+                print '%d\t    ' % i, 
+            print '\n',
+            for i in resultingNumbers:
+                if useRanluxInt:
+                    print i,
+                else:
+                    print '%.5f' % i, 
+        else:
+            'Woopsie, something went wrong :('
+    print '\n',
+#print dummyBuffer.get()
 #for i in range(0,len(resultingNumbers)):
 #    if resultingNumbers[0] == resultingNumbers[i]:
 #        print i

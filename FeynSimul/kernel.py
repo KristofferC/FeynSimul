@@ -209,7 +209,7 @@ class PIMCKernel:
             self._localSize = None
             self._globalSize = (self._nbrOfWalkers,)
             self._nbrOfThreads = self._nbrOfWalkers
-
+        
         # Defines for kernel code, used by the pre-processor to determine what
         # code to include or discard.
         defines = ""
@@ -400,6 +400,12 @@ class PIMCKernel:
                 #                              hostbuf=dummyBuffer)
                 self._ranluxcltab = cl.array.to_device(self._queue,
                                        np.zeros(self._nbrOfThreads * 28, dtype=np.uint32))
+                #A buffer needed for the Ranlux state
+                #dummyBuffer = np.zeros(self._nbrOfThreads * 28, dtype=np.uint32)
+                #self._ranluxcltab = cl.Buffer(self._ctx, mf.READ_WRITE | mf.USE_HOST_PTR, size=0, 
+                #                              hostbuf=dummyBuffer)
+                self._groupRanluxcltab = cl.array.to_device(self._queue,
+                                         np.zeros(self._nbrOfThreads * 28, dtype=np.uint32))
                 #self._ranluxcltab2 = cl.Buffer(self._ctx, mf.READ_WRITE | mf.USE_HOST_PTR, size=0, 
                 #                               hostbuf=dummyBuffer)
                 #Seeds for RANLUX initialization
@@ -407,6 +413,11 @@ class PIMCKernel:
                                  (np.random.randint(0, high = 2 ** 31 - 1,
                                   size = (self._nbrOfThreads + 1))
                                   ).astype(np.uint32))
+                #Group Seeds for RANLUX initialization
+                self._groupSeeds = cl.array.to_device(self._queue,
+                                    (np.random.randint(0, high = 2 ** 31 - 1,
+                                    size = (self._N / (2 ** self._S) + 1))
+                                    ).astype(np.uint32))
             else:
                 #seeds for xorshift: np.random.seed(0)
                 self._seeds = cl.array.to_device(self._queue,
@@ -454,8 +465,9 @@ class PIMCKernel:
         #by the .data parameter.
 
         args = [self._paths.data,
-                self._accepts.data,
-                self._seeds.data]
+                self._accepts.data]
+        if not self._enableRanlux:                
+            args += [self._seeds.data]
 
         if self._enableGlobalOldPath:
             args += [self._oldPath.data]
@@ -470,7 +482,8 @@ class PIMCKernel:
             args += [self._binCounts.data]
 
         if self._enableRanlux:
-            args += [self._ranluxcltab.data]
+            args += [self._ranluxcltab.data,
+                     self._groupRanluxcltab.data]
 
         #print(self._globalSize)#(nbrOfWorkgroups* nbrOfThreadsPerWalker, RP.nbrOfWalkersPerWorkGroup)
         #print(self._localSize)#(nbrOfThreadsPerWalker,RP.nbrOfWalkersPerWorkGroup)
@@ -511,10 +524,35 @@ class PIMCKernel:
             _initKernelObj.wait()
         except pyopencl.RuntimeError:
             if time() - startTime > 5.0:
-                raise Exception("Init Kernel runtime error. Over 5 seconds had "
-                                "passed when kernel aborted.")
+                raise Exception("Ranlux Init Kernel runtime error. Over 5 "
+                                "seconds had passed when kernel aborted.")
             else:
                 raise
+
+    def groupInitRanlux(self):
+        """
+        Runs the RanluxCL group init kernel with the self._system and the run
+        parameters on the OpenCL device.
+        """
+        
+        args = [self._groupSeeds.data, self._groupRanluxcltab.data]
+        
+        startTime = time()
+        _initKernelObj = self._prg.ranlux_group_init_kernel(self._queue,
+                                                            self._globalSize,
+                                                            self._localSize,
+                                                            *args)
+
+        #Wait until the threads have finished and then calculate total run time
+        try:
+            _initKernelObj.wait()
+        except pyopencl.RuntimeError:
+            if time() - startTime > 5.0:
+                raise Exception("Ranlux Init Kernel runtime error. Over 5 "
+                                "seconds had passed when kernel aborted.")
+            else:
+                raise
+
 
     def getPaths(self):
         """
@@ -626,9 +664,11 @@ class PIMCKernel:
             _numBytes = 4
         usedGlobalMemory = 0
         if self._enableRanlux:
-            usedGlobalMemory += (self._nbrOfThreads + 1) * 4  # seeds
+            usedGlobalMemory += (self._nbrOfThreads * 28)  # ranluxcltab
+            usedGlobalMemory += (self._nbrOfThreads * 28)  # groupRanluxcltab
         else:
             usedGlobalMemory += (self._nbrOfThreads + 1) * 4 * 4  # seeds
+            
         usedGlobalMemory += (self._nbrOfThreads) * 4  # accepts
         usedGlobalMemory += (self._nbrOfWalkers * self._N *
                              self._system.DOF * _numBytes)  # path

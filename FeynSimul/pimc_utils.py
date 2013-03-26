@@ -164,6 +164,7 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
     firstNRun = True
     totRuns = 0
     while finalN == -1 or kaMod.N <= finalN:
+        overheadClock = time()
         # Make sure S is large enough to not use too many walkers in a WG
         #while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
         #    kaMod.S += 1
@@ -181,11 +182,14 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
             print("New kernel compiled, getStats():")
             print(kernel.getStats())
             print("Run results:")
+        if ka.enableRanlux:
+            kernel.initRanlux()
+            kernel._queue.finish()
+            kernel.groupInitRanlux()
+            kernel._queue.finish()
 
         # If not first run create a new path by interpolating
         if firstNRun:
-            if ka.enableRanlux:
-                kernel.initRanlux()
             if not continueRun:
                 initialPaths = np.zeros((ka.nbrOfWalkers, kaMod.N * kaMod.system.DOF))
                 for i in range(ka.nbrOfWalkers):
@@ -221,16 +225,23 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
 
         nRuns = 1
         runsThisN = runsPerN(kaMod.N, kaMod.S)
+        lastCall = time()
+        loopClock = time()
         while nRuns <= runsThisN or kaMod.N == finalN:
-            if simTime != -1 and time() - startClock > simTime:
+            if simTime != -1 and simTime != 0 and time() - startClock > simTime:
                 if verbosity>0:
                     print("Time limit reached!")
                 return
             kernel.run()
+            if totRuns > 100 and totRuns%100 == 0:
+                print 'Letting current queue finish before continuing. This is to prevent memory from choking by pile-up.'
+                kernel._queue.finish()
             pathChanges += kernel.getMetroStepsPerRun()
             _output(filename, kaMod.N, time()-startClock, pathChanges
                    , kernel.getAcceptanceRate(), kernel.getOperators()
+                   , (time()-lastCall), kernel.getRunTime()
                    , ka.beta, kaMod.S,verbose=verbosity>0)
+            lastCall = time()
             # Save paths
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 with open("results/" + experimentName + "/" + timestamp +
@@ -241,12 +252,17 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                         csvWriter.writerow(aPath)
                 if verbosity>0:
                     print("Paths saved!")
+            if simTime == 0 and nRuns == runsThisN and kaMod.N == finalN:
+                if verbosity>0:
+                    print("Runs completed!")
+                return
             nRuns += 1
             totRuns += 1
-
+        loopClockEnd = time()
+        
         with open("results/" + experimentName + "/" + timestamp +
                  "/timestamps", 'ab') as f2:
-            f2.write('N='+str(kaMod.N)+', totRuns='+str(totRuns)+': '+str(time()-startClock)+'\n')
+            f2.write('N: '+str(kaMod.N)+'\tS: '+str(kaMod.S)+'\ttotRuns: '+str(totRuns)+'\ttime: '+str(time()-startClock)+'\tnormtime: '+str(float(time()-startClock)/(float(kernel._nbrOfThreads)*float(totRuns)))+'\n')
         #do preparations for next run that are not to be done first run
         if kaMod.N != finalN:
             oldPaths = kernel.getPaths()
@@ -254,6 +270,7 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
             # Change S to move acceptance rate in the right direction, some magic
             # numbers here.
             ar=kernel.getAcceptanceRate()
+            
             if ar > 0.5:
                 kaMod.S = min(i - 1, kaMod.S + 2)
             if 0.2 < ar < 0.5:
@@ -261,9 +278,14 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
             if ar < 0.1:
                 kaMod.S = max(1, kaMod.S - 1)
             kaMod.N *= 2
+            
+            #print 'Letting current queue finish before continuing.'
+            #kernel._queue.finish()
+        print('Overhead time: ' + str(time()-overheadClock + loopClock - loopClockEnd))
+    #kernel._queue.finish()
 
 def _output(filename, N, t, pathChanges, acceptanceRate
-           , operatorMean, beta, S, verbose=False):
+           , operatorMean, hostRunTime, kernelRunTime, beta, S, verbose=False):
     """
     Used by the modN function to save data from a run into a file in ASCII
     format.
@@ -290,6 +312,12 @@ def _output(filename, N, t, pathChanges, acceptanceRate
                          product of the number of operators and the number of
                          independent simulations
 
+    :type kernelRunTime: float
+    :param kernelRunTime: Run time of last Kernel.
+    
+    :type hostRunTime: float
+    :param hostRunTime: Host overhead time between kernel calls.
+                 
     :type beta: float
     :param beta: Euclidian time used for the simulation. Should be constant
                  between runs.
@@ -304,7 +332,7 @@ def _output(filename, N, t, pathChanges, acceptanceRate
     if verbose:
         print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
                 str(beta)+"\tAR: " + str(acceptanceRate) + "\tOPs: " +
-            str(np.mean(operatorMean, axis = 1)))
+            str(np.mean(operatorMean, axis = 1)) + "\tTime: [" + str(hostRunTime) + "," + str(kernelRunTime) + "]")
 
     with open(filename + ".tsv", 'a') as f_data:
         # Add a heading describing the columns if file is empty.
