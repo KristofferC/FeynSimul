@@ -44,8 +44,11 @@ ka = KernelArgs(system = system,
                 enableParallelizePath = True,
                 enableGlobalPath = False,
                 enableGlobalOldPath = False,
-                enableBins = True,
+                enableBins = False,
                 enableDouble = False,
+                enableRanlux = True,
+                luxuaryFactor = 2,
+                ranluxIntMax = 2**31-1,
                 xMin = -3.5,
                 xMax = 3.5,
                 operatorRuns = 300,
@@ -54,17 +57,25 @@ ka = KernelArgs(system = system,
                 operators = (system.energyOp,),
                 correlators = ("x1",))
 
-plotWaveFunction = True
+plotWaveFunction = False
 
 # Load kernel
-kernel = PIMCKernel(ka)
+kernel = PIMCKernel(ka,verbose=True)
 
 # Run kernel
+if ka.enableRanlux:
+    kernel.initRanlux()
+    kernel._queue.finish()
+    kernel.groupInitRanlux()
+    kernel._queue.finish()
 kernel.run()
 
 # Print the results
+print("New kernel compiled, getStats():")
+print(kernel.getStats())
 print "Ground state at: " + str(np.mean(kernel.getOperators()))
-
+print "Acceptance rate: " + str(kernel.getAcceptanceRate())
+print "Kernel run time: " + str(kernel.getRunTime()) + " s"
 
 #Plot resulting wavefunction
 if plotWaveFunction and ka.enableBins:
@@ -82,7 +93,6 @@ if plotWaveFunction and ka.enableBins:
     #pl.xlabel("x")
     #pl.title("$| \psi_0(x)|^2$ for Simple Harmonic Oscillator")
     pl.show()
-
 
 
 #corrs = kernel.getCorrelator()[0]
