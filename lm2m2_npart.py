@@ -25,38 +25,44 @@ from time import time
 from time import sleep
 import csv
 
+from FeynSimul.kernel_args import *
+from FeynSimul.kernel import *
+
 from FeynSimul.pimc_utils import *
 
-from FeynSimul.physical_systems.lm2m2_3part import *
-
-ka = KernelArgs(nbrOfWalkers = 64,
+# Import the harmonic oscillator class
+from FeynSimul.physical_systems.lm2m2_cluster import *
+enableDoubleOuter=False
+system = Lm2m2_cluster(3,10e-3,verbose=False,enableDouble=enableDoubleOuter)
+ka = KernelArgs(system = system,
+                nbrOfWalkers = 64,
                 N = 8,
-                enablePathShift = False,
-                enableBisection = True,
-                enableSingleNodeMove = False,
-                enableGlobalPath = True,
-                enableGlobalOldPath = True,
-                enableParallelizePath = True,
-                enableBins = False,
-                enableDouble = False,
-                enableRanlux = False,
-                luxuaryFactor = 2,
-                ranluxIntMax = 2**32-1,
-                beta = 1000.0,
-                nbrOfWalkersPerWorkGroup = 4,
-                operatorRuns = 100,
+                beta = system.beta,
+                S = 6,
                 enableOperator = True,
                 enableCorrelator = False,
                 metroStepsPerOperatorRun = 40,
-                system = Lm2m2_3part())
-
+                enableBisection = True,
+                enablePathShift = False,
+                enableSingleNodeMove = False,
+                enableParallelizePath = True,
+                enableGlobalPath = True,
+                enableGlobalOldPath = True,
+                enableBins = False,
+                enableDouble = enableDoubleOuter,
+                enableRanlux = False,
+                luxuaryFactor = 2,
+                ranluxIntMax = 2**32-1,
+                operatorRuns = 100,
+                nbrOfWalkersPerWorkGroup = 4,
+                operators = (system.energyOp, system.meanSquaredRadiusOp))
 # Time to run simul
-endTime = 60 * 60 * 24 * 14
+#endTime = 60 * 60 * 24 * 14
+endTime = 0 # Stop when final N has reached 'runsThisN' amount of runs
 
 # How often to save paths.
 savePathsInterval = 3000
-ka.operators = (ka.system.energyOp, ka.system.meanSquaredRadiusOp
-              , ka.system.meanRadiusOp)
+ka.operators = (ka.system.energyOp, ka.system.meanSquaredRadiusOp)
 
 
 def opRunsFormula(N, S):
@@ -69,9 +75,9 @@ def runsPerN(N, S):
     return max(N / 8, 10)
 
 startXList=np.random.uniform(size=(ka.nbrOfWalkers,ka.system.DOF)
-        ,low=-1.0,high=1.0)*0.01
+        ,low=-1.0,high=1.0)*0.1*1e-10/ka.system.rUnit*np.sqrt(ka.system.m)*0
 
 # Run the simulation function
-modN(ka, startXList, savePathsInterval, "lm2m2_3part", opRunsFormula
+modN(ka, startXList, savePathsInterval, "lm2m2_cluster", opRunsFormula
      , mStepsPerOPRun,  runsPerN, 512, simTime=endTime, finalN=1024*64,
-     verbosity=2)
+     verbosity=2, continueRun=False, cont_S=12, cont_N=1024*16, cont_path='results/lm2m2_cluster/2013-02-20/13.51.01/pathsN16384episode1')

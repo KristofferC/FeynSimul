@@ -10,3 +10,9 @@
 
 # Built documentation
 /doc/_built/
+
+# Descriptve comment
+results/
+cleaned.c
+preprocessed.c
+

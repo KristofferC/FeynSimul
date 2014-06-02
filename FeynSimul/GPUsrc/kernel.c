@@ -34,14 +34,17 @@
 //#                                 Defines                                    #
 //##############################################################################
 //Description: This is a placeholder for defines used in the program.
+
 %(defines)s
 
 #ifdef ENABLE_DOUBLE
-    // Set float precision to double
-    #define FLOAT_TYPE double
-    
     // Check that pragmas for 64bit actually exists
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
+    // Set float precision to double
+    #define FLOAT_TYPE double
+    #define FLOAT_TYPE_VECTOR double4
+    
     //#ifdef cl_khr_fp64
     //    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     //#elif defined(cl_amd_fp64)
@@ -52,7 +55,9 @@
 #else
     // Set float precision to single
     #define FLOAT_TYPE float
+    #define FLOAT_TYPE_VECTOR float4
 #endif
+
 
 #ifdef ENABLE_GLOBAL_PATH
 	#define PATH_TYPE_KEYWORD __global
@@ -64,6 +69,36 @@
 	#endif
 #endif
 
+
+//##############################################################################
+//#                          Rand-func definitions                             #
+//##############################################################################
+#ifdef ENABLE_RANLUX
+    #define RANLUXCL_LUX %(luxuaryFactor)s
+    
+    
+    #ifdef ENABLE_DOUBLE
+        #define RANLUXCL_SUPPORT_DOUBLE
+        #define RAND_FLOAT_FUNCTION ranluxWrapper
+        #define RANLUX_FUNCTION ranluxcl64
+    #else
+        #define RAND_FLOAT_FUNCTION ranluxWrapper
+        #define RANLUX_FUNCTION ranluxcl32
+    #endif
+    
+    
+    #include <pyopencl-ranluxcl.cl>
+    #define RAND_FUNCTION_ARG &ranluxclstate, &randCount, &randomTemp
+    #define RAND_FUNCTION_ARG_PTR ranluxclstate, randCount, randomTemp
+    #define RAND_INT_FUNCTION ranluxIntWrapper
+    #define RAND_INT_FUNCTION_ARG &groupRanluxclstate, &intRandCount, &intRandomTemp
+#else
+    #define RAND_FLOAT_FUNCTION randFloat
+    #define RAND_FUNCTION_ARG &seed
+    #define RAND_FUNCTION_ARG_PTR seedPtr
+    #define RAND_INT_FUNCTION randInt
+    #define RAND_INT_FUNCTION_ARG &seedG
+#endif
 
 //##############################################################################
 //#                                 userCode                                   #
@@ -108,7 +143,69 @@ inline FLOAT_TYPE potential(DOF_ARGUMENT_DECL)
 {
     return %(potential)s;
 }
-
+#ifdef ENABLE_RANLUX
+//##############################################################################
+//#                             ranlux_init_kernel                             #
+//##############################################################################
+//Description: Used to initialize and warmup the RANLUX PRNG. Run this as a
+//             separate kernel instance before running the main kernel function.
+__kernel void ranlux_init_kernel(__global uint *seeds,
+                                 __global ranluxcl_state_t *ranluxcltab)
+{
+    ranluxcl_init((ulong) *seeds, ranluxcltab + (get_global_id(0) + get_global_id(1) * get_global_size(0) + get_global_id(2) * get_global_size(0) * get_global_size(1)));
+}
+//##############################################################################
+//#                          ranlux_group_init_kernel                          #
+//##############################################################################
+//Description: Used to initialize and warmup the RANLUX PRNG. Run this as a
+//             separate kernel instance before running the main kernel function.
+__kernel void ranlux_group_init_kernel(__global uint *groupSeeds,
+                                       __global ranluxcl_state_t *groupRanluxcltab)
+{
+    ranluxcl_init((ulong) *(groupSeeds + get_group_id(0) + (get_global_id(1) * get_global_size(0)) / get_local_size(0)), groupRanluxcltab + (get_global_id(0) + get_global_id(1) * get_global_size(0) + get_global_id(2) * get_global_size(0) * get_global_size(1)));
+}
+//##############################################################################
+//#                                   union                                    #
+//##############################################################################
+//Description: 
+union ranlux_vector_union
+{
+    FLOAT_TYPE_VECTOR ranlux_vector;
+    FLOAT_TYPE ranlux_array[4];
+};
+//##############################################################################
+//#                               ranluxWrapper                                #
+//##############################################################################
+//Description: 
+inline FLOAT_TYPE ranluxWrapper(ranluxcl_state_t *ranluxclstate,
+                                uint *randCount,
+                                union ranlux_vector_union *randomTemp)
+{
+    if(((*randCount) & 3) == 0)
+    {
+        (*randomTemp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
+    }
+    
+    return (*randomTemp).ranlux_array[((*randCount)++) & 3];                                               // <---------
+}
+//##############################################################################
+//#                             ranluxIntWrapper                               #
+//##############################################################################
+//Description: Used to produce four integers (uint4) with ranlux, ranging
+//             between 0 and ranluxIntMax-1, using the same state buffer as the
+//             other ranlux functions
+inline uint ranluxIntWrapper(ranluxcl_state_t *ranluxclstate,
+                            uint *randCount,
+                            union ranlux_vector_union *randomTemp)
+{
+    if(((*randCount) & 3) == 0)
+    {
+        (*randomTemp).ranlux_vector = RANLUX_FUNCTION (ranluxclstate);
+    }
+    
+    return (uint) ((*randomTemp).ranlux_array[((*randCount)++) & 3] * ((FLOAT_TYPE) %(ranluxIntMax)s));     // <---------
+}
+#else // RANLUX NOT ENABLED
 //##############################################################################
 //#                                 XORSHIFT                                   #
 //##############################################################################
@@ -121,21 +218,26 @@ inline void xorshift (uint4 *seedPtr)
     (*seedPtr).xyz=(*seedPtr).yzw;
     (*seedPtr).w = ((*seedPtr).w ^ ((*seedPtr).w >> 19) ^ (t ^ (t >> 8)));
 }
-
-
 //##############################################################################
 //#                               randFloat                                    #
 //##############################################################################
 //Description: This returns a random floating point number by dividing w with
-//             UINT32_MAX (hardcoded).
-inline FLOAT_TYPE
-randFloat(uint4 *seedPtr)
+//             UINT32_MAX (hardcoded).   
+inline FLOAT_TYPE randFloat(uint4 *seedPtr)
 {
     xorshift(seedPtr);
     return (*seedPtr).w * 2.328306437080797e-10;
 }
-
-
+//##############################################################################
+//#                                randInt                                     #
+//##############################################################################
+//Description: This returns a random integer number through xorshift.
+inline uint randInt(uint4 *seedPtr)
+{
+    xorshift(seedPtr);
+    return (*seedPtr).w;
+}
+#endif // End of: RANLUX NOT ENABLED
 //##############################################################################
 //#                                kinEnergyEst                                #
 //##############################################################################
@@ -145,7 +247,6 @@ inline FLOAT_TYPE kinEnergyEst (FLOAT_TYPE leftX, FLOAT_TYPE rightX)
     FLOAT_TYPE delta = leftX - rightX;
     return 0.5 * (delta * delta) * %(epsilon_inv2)s;
 }
-
 //##############################################################################
 //#                                doBisectMove                                #
 //##############################################################################
@@ -158,7 +259,14 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
 #ifdef ENABLE_GLOBAL_OLD_PATH
                           __global FLOAT_TYPE *oldPath,
 #endif
-                         uint startPoint, uint4 *seedPtr,
+                         uint startPoint,
+#ifdef ENABLE_RANLUX
+                         ranluxcl_state_t *ranluxclstate,
+                         uint *randCount,
+                         union ranlux_vector_union *randomTemp,
+#else
+                         uint4 *seedPtr,
+#endif
                          uint *local_accepts, int *twoPow,
                          FLOAT_TYPE *sigmaN)
 {
@@ -231,8 +339,8 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
             {
                 int Ndegree = degree * %(N)s;
                 // Need two random numbers for Box Muller method.
-                FLOAT_TYPE u = randFloat(seedPtr);
-                FLOAT_TYPE v = randFloat(seedPtr);
+                FLOAT_TYPE u = RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG_PTR); //randFloat(seedPtr);
+                FLOAT_TYPE v = RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG_PTR); //randFloat(seedPtr);
                 FLOAT_TYPE rz;
                 // Corner case if randFloat gives a zero.
                 if (v == 0.0)
@@ -242,7 +350,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
                 else
                 {
                     rz = sigmaN[n] * sqrt (-2.0 * log (v))
-                        * sin (2.0 * %(PI)s * u);
+                        * sin (2.0 * M_PI * u);
                 }
 
                 // Do the actual moving of node by averaging nodes to right and left
@@ -266,7 +374,7 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
         actionNew += %(epsilon)s *potential(DOF_ARGUMENT_DATA);
     }
     // Path rejected:
-    if (exp(actionOld-actionNew) < randFloat(seedPtr))
+    if (exp(actionOld-actionNew) < RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG_PTR)) //randFloat(seedPtr))
     {
         // Revert to old path
         for (int i = 1; i < %(2_POW_S)s; i++)
@@ -290,7 +398,6 @@ inline void doBisectMove (PATH_TYPE_KEYWORD FLOAT_TYPE *path,
     }
 }
 #endif
-
 //##############################################################################
 //#                                 shiftPathEnergyDiff                        #
 //##############################################################################
@@ -364,8 +471,6 @@ shiftPathEnergyDiff (PATH_TYPE_KEYWORD FLOAT_TYPE *x, uint degree, FLOAT_TYPE of
 
 }
 #endif
-
-
 //##############################################################################
 //#                                 Histogram                                  #
 //##############################################################################
@@ -409,38 +514,65 @@ histogram (PATH_TYPE_KEYWORD FLOAT_TYPE *local_path, __global uint *binCounts)
 __kernel void
 metropolis (__global FLOAT_TYPE *paths
             ,__global uint *accepts
+#ifndef ENABLE_RANLUX
             ,__global uint *seeds
+#endif
 #ifdef ENABLE_GLOBAL_OLD_PATH
             ,__global FLOAT_TYPE *oldPaths
 #endif
 #ifdef ENABLE_OPERATOR
-           ,__global FLOAT_TYPE *opMeans
+            ,__global FLOAT_TYPE *opMeans
 #endif
 #ifdef ENABLE_CORRELATOR
             ,__global FLOAT_TYPE *corMeans
 #endif
 #ifdef ENABLE_BINS
-	    ,__global uint *binCounts
+	        ,__global uint *binCounts
+#endif
+#ifdef ENABLE_RANLUX
+            ,__global ranluxcl_state_t *ranluxcltab
+            ,__global ranluxcl_state_t *groupRanluxcltab
 #endif
         )
 {
 #ifdef ENABLE_PARALELLIZE_PATH
-    uint walkerId = get_group_id(0) * %(nbrOfWalkersPerWorkGroup)s + get_local_id(1);
+    uint walkerId = get_group_id(0) * %(nbrOfWalkersPerWorkGroup)s + get_local_id(1);       //<---------------
 #endif
     uint threadId = get_global_id(0) + get_global_id(1) * get_global_size(0);
-    //This sets the seeds for the Xorshift PRNG.
+    
+#ifdef ENABLE_RANLUX
+    //Initialize the ranlux generator
+    //ranluxcl_initialization(*seeds, ranluxcltab);
+    
+    //ranluxclstate stores the state of the generator.
+    ranluxcl_state_t ranluxclstate;
+    ranluxcl_state_t groupRanluxclstate;
+
+    //Download state into ranluxclstate struct.
+    ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
+    ranluxcl_download_seed(&groupRanluxclstate, groupRanluxcltab);
+    
+    union ranlux_vector_union randomTemp;
+    union ranlux_vector_union intRandomTemp;
+    uint randCount = 0;
+    uint intRandCount = 0;
+#else
+    //This sets the seeds for the PRNG.
     uint4 seed,seedG;
+    
     seed.x = seeds[threadId * 4 + 0];
     seed.y = seeds[threadId * 4 + 1];
     seed.z = seeds[threadId * 4 + 2];
     seed.w = seeds[threadId * 4 + 3];
 
-    uint lastSeedPos = get_global_size(0) * get_global_size(1)*4;
+    uint lastSeedPos = (get_group_id(0) + get_global_id(1) * get_global_size(0) / get_local_size(0))*4; //get_global_size(0) * get_global_size(1)*4;
     seedG.x = seeds[lastSeedPos + 0];
     seedG.y = seeds[lastSeedPos + 1];
     seedG.z = seeds[lastSeedPos + 2];
     seedG.w = seeds[lastSeedPos + 3];
+#endif
 
+    
     uint local_accepts=0;
 
 #ifdef ENABLE_PATH_SHIFT
@@ -508,16 +640,18 @@ metropolis (__global FLOAT_TYPE *paths
 #ifdef ENABLE_PATH_SHIFT
             uint degree = (%(metroStepsPerOperatorRun)s*i+j) %% %(DOF)s;
             // Choose the interval of the path to shift
-            xorshift (&seedG);
-            uint left =seedG.w & mask;
-            xorshift (&seedG);
-            uint right = seedG.w & mask;
+            //xorshift (&seedG);
+            //uint left =seedG.w & mask;
+            //xorshift (&seedG);
+            //uint right = seedG.w & mask;
+            uint left = RAND_INT_FUNCTION(RAND_INT_FUNCTION_ARG) & mask;                                    //<-------------
+            uint right = RAND_INT_FUNCTION(RAND_INT_FUNCTION_ARG) & mask;
             FLOAT_TYPE offset =
-                %(PSAlpha)s * (2.0 * randFloat (&seed) - 1.0);
+                %(PSAlpha)s * (2.0 * RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG) - 1.0); //randFloat (&seed) - 1.0);
 
             // Revert path shift if rejected by Metropolis step
             if (exp (-%(epsilon)s *  shiftPathEnergyDiff (local_path + (%(N)s * degree),
-                            degree, offset, left, right)) < randFloat (&seed))
+                            degree, offset, left, right)) < RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG)) //randFloat (&seed))
             {
                 shiftPathEnergyDiff (local_path + (%(N)s * degree),
                         degree, -offset, left, right);
@@ -545,7 +679,8 @@ metropolis (__global FLOAT_TYPE *paths
             }
 
             FLOAT_TYPE oldX = local_path[modPathPoint];
-            FLOAT_TYPE modX = oldX + (2.0 *randFloat(&seed)-1.0)*%(alpha)s;
+            FLOAT_TYPE modX = oldX + (2.0 *RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG)-1.0)*%(alpha)s;
+            //FLOAT_TYPE modX = oldX + (2.0 *randFloat(&seed)-1.0)*%(alpha)s;
 
             //Calculate the difference in energy (action) for the new path
             //compared to the old, stored in diffE.
@@ -562,7 +697,7 @@ metropolis (__global FLOAT_TYPE *paths
             local_path[modPathPoint] = oldX;
 
             //Determine whether or not to accept the change in the path.
-            if (native_exp(-%(epsilon)s*diffE) > randFloat(&seed))
+            if (exp(-%(epsilon)s*diffE) > RAND_FLOAT_FUNCTION(RAND_FUNCTION_ARG)) //randFloat(&seed))
             {
                 local_path[modPathPoint] = modX;
                 local_accepts++;
@@ -570,17 +705,20 @@ metropolis (__global FLOAT_TYPE *paths
 #endif
 
 #ifdef ENABLE_BISECTION
-            xorshift(&seedG);
+            //xorshift(&seedG);
             doBisectMove(local_path,
 #ifdef ENABLE_GLOBAL_OLD_PATH
             oldPaths+threadId*(%(2_POW_S)s-1)*%(DOF)s,
 #endif
 #ifdef ENABLE_PARALELLIZE_PATH
-             ((seedG.w & ((uint)(%(2_POW_S)s - 1))) + %(2_POW_S)s*get_local_id(0))%% %(N)s,
+             
+             ((RAND_INT_FUNCTION(RAND_INT_FUNCTION_ARG) & ((uint)(%(2_POW_S)s - 1))) + %(2_POW_S)s*get_local_id(0))%% %(N)s,
+             //((seedG.w & ((uint)(%(2_POW_S)s - 1))) + %(2_POW_S)s*get_local_id(0))%% %(N)s,
 #else
-             (seedG.w & ((uint)(%(N)s - 1)))%% %(N)s,
+             (RAND_INT_FUNCTION(RAND_INT_FUNCTION_ARG) & ((uint)(%(N)s - 1)))%% %(N)s,
+             //(seedG.w & ((uint)(%(N)s - 1)))%% %(N)s,
 #endif
-             &seed,&local_accepts, twoPow, sigmaN);
+             RAND_FUNCTION_ARG,&local_accepts, twoPow, sigmaN);
 #endif
 
 #ifdef ENABLE_PARALELLIZE_PATH
@@ -644,10 +782,10 @@ metropolis (__global FLOAT_TYPE *paths
                     {
 #ifdef ENABLE_PARALELLIZE_PATH
                         corMeans[walkerId * %(nbrOfCorrelators)s * %(N)s/2 +
-                                 corI * %(N)s/2  +corT]+=corProd[corI];
+                                 corI * %(N)s/2 + corT] += corProd[corI];
 #else
-                        corMeans[threadId*%(nbrOfCorrelators)s*%(N)s/2  +
-                                 corI*%(N)s/2  +corT]+=corProd[corI];
+                        corMeans[threadId * %(nbrOfCorrelators)s * %(N)s/2 +
+                                 corI * %(N)s/2 + corT] += corProd[corI];
 #endif
 		    }
 #ifdef ENABLE_PARALELLIZE_PATH
@@ -684,10 +822,16 @@ metropolis (__global FLOAT_TYPE *paths
 
     accepts[threadId] = local_accepts;
 
+#ifdef ENABLE_RANLUX
+    //Upload ranlux state for the consequitve runs.
+    ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
+    ranluxcl_upload_seed(&groupRanluxclstate, groupRanluxcltab);
+#else
     //Store the current state of the Xorshift PRNG for use in the next
     //kernel run.
     seeds[threadId * 4] = seed.x;
     seeds[threadId * 4 + 1] = seed.y;
     seeds[threadId * 4 + 2] = seed.z;
     seeds[threadId * 4 + 3] = seed.w;
+#endif
 }

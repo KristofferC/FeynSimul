@@ -33,6 +33,9 @@ class KernelArgs:
                  enableBins,
                  nbrOfWalkersPerWorkGroup,
                  enableDouble=None,
+                 enableRanlux=None,
+                 luxuaryFactor=None,
+                 ranluxIntMax=None,
                  S=None,
                  alpha=None,
                  PSAlpha=None,
@@ -99,7 +102,21 @@ class KernelArgs:
         :param enableDouble: Determine if double or single precision is to be
                              used for floats on the GPU. Default is single
                              precision.
-
+                             
+        :type enableRanlux: boolean
+        :param enableRanlux: Use RANLUX instead of xorshift for random number
+                             generation.
+                             
+        :type luxuaryFactor: int
+        :param luxuaryFactor: Luxuary parameter for RANLUX, ranging from 0 to 4,
+                              or >=24 (in which case it directly sets the p
+                              value of RANLUXCL). Higher number means better
+                              quality, but slower generation. Description:
+                              http://wwwasdoc.web.cern.ch/wwwasdoc/shortwrupsdir/v115/top.html
+                              
+        :type ranluxIntMax: int
+        :param ranluxIntMax: Ranlux integers range between [0,ranluxIntMax)
+        
         :type S: int 
         :param S: Parameter to the bisection sampling algorithm. 2 ** S is the
                   number of nodes on sample step will update.
@@ -173,7 +190,10 @@ class KernelArgs:
         self.alpha = alpha
 
         self.enableOperator = enableOperator
-     
+
+        self.enableRanlux = enableRanlux
+        self.luxuaryFactor = luxuaryFactor
+        self.ranluxIntMax = ranluxIntMax
 
         self.operatorRuns = operatorRuns
         self.operators = operators

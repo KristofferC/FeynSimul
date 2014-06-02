@@ -16,6 +16,7 @@
 import os
 from datetime import datetime
 from time import time
+import sys
 import copy
 
 import csv
@@ -25,8 +26,8 @@ from kernel_args import *
 from kernel import *
 
 def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula, 
-        mStepsPerOPRun, runsPerN, maxWGSize, continueRun=False, cont_path=None,
-        cont_S=None, cont_N=None, finalN=-1, simTime=-1, verbose=False):
+        mStepsPerOPRun, runsPerN, maxWGSize, continueRun=False, finalN=-1,
+        simTime=-1, verbosity=0, cont_S=None, cont_N=None, cont_path=None):
     """
     A function to automate some of the things one would commonly like to do
     when doing a simulation. This function helps with saving data to a file,
@@ -115,8 +116,8 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
     :param simTime: The total time in seconds that the simulation will run for. 
                     Defaulted to -1 which means that it will never stop.
 
-    :type verbose: boolean
-    :param verbose: Prints out extra information to stdout if enabled.
+    :type verbosity: int
+    :param verbosity: Prints out extra information to stdout if greater than 0.
     """
 
     kaMod = copy.copy(ka)
@@ -152,22 +153,40 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
     
    
 
-    
+    with open("results/" + experimentName + "/" + timestamp +
+              "/systemInfo", 'ab') as f_info:
+        f_info.write('')
+        # Start time
+        # System
+        # Particle amount
+        # Temperature
+        
     firstNRun = True
-
+    totRuns = 0
     while finalN == -1 or kaMod.N <= finalN:
+        overheadClock = time()
         # Make sure S is large enough to not use too many walkers in a WG
-        while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
-            kaMod.S += 1
-
+        #while ka.nbrOfWalkersPerWorkGroup * kaMod.N / (2 ** kaMod.S) > maxWGSize:
+        #    kaMod.S += 1
+        minS=int(np.ceil(np.log2(ka.nbrOfWalkersPerWorkGroup *
+            kaMod.N/float(maxWGSize))))
+        maxS=int(np.log2(kaMod.N))
+        if maxS<minS:
+            raise Exception('Too many walkers per workgroup')
+        kaMod.S=min(maxS,max(minS,kaMod.S))
         kaMod.operatorRuns = opRunsFormula(kaMod.N, kaMod.S)
         kaMod.metroStepsPerOperatorRun = mStepsPerOPRun(kaMod.N, kaMod.S)
 
-        kernel=PIMCKernel(kaMod)
-        if verbose:
+        kernel=PIMCKernel(kaMod, verbose = verbosity >= 2)
+        if verbosity>0:
             print("New kernel compiled, getStats():")
             print(kernel.getStats())
             print("Run results:")
+        if ka.enableRanlux:
+            kernel.initRanlux()
+            kernel._queue.finish()
+            kernel.groupInitRanlux()
+            kernel._queue.finish()
 
         # If not first run create a new path by interpolating
         if firstNRun:
@@ -206,16 +225,23 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
 
         nRuns = 1
         runsThisN = runsPerN(kaMod.N, kaMod.S)
+        lastCall = time()
+        loopClock = time()
         while nRuns <= runsThisN or kaMod.N == finalN:
-            if simTime != -1 and time() - startClock > simTime:
-                if verbose:
+            if simTime != -1 and simTime != 0 and time() - startClock > simTime:
+                if verbosity>0:
                     print("Time limit reached!")
                 return
             kernel.run()
+            if totRuns > 100 and totRuns%100 == 0:
+                print 'Letting current queue finish before continuing. This is to prevent memory from choking by pile-up.'
+                kernel._queue.finish()
             pathChanges += kernel.getMetroStepsPerRun()
             _output(filename, kaMod.N, time()-startClock, pathChanges
                    , kernel.getAcceptanceRate(), kernel.getOperators()
-                   , ka.beta, kaMod.S,verbose=verbose)
+                   , (time()-lastCall), kernel.getRunTime()
+                   , ka.beta, kaMod.S,verbose=verbosity>0)
+            lastCall = time()
             # Save paths
             if nRuns % savePathsInterval == 0 or nRuns == runsThisN :
                 with open("results/" + experimentName + "/" + timestamp +
@@ -224,10 +250,19 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
                     csvWriter = csv.writer(f, delimiter='\t')
                     for aPath in kernel.getPaths():
                         csvWriter.writerow(aPath)
-                if verbose:
+                if verbosity>0:
                     print("Paths saved!")
+            if simTime == 0 and nRuns == runsThisN and kaMod.N == finalN:
+                if verbosity>0:
+                    print("Runs completed!")
+                return
             nRuns += 1
-
+            totRuns += 1
+        loopClockEnd = time()
+        
+        with open("results/" + experimentName + "/" + timestamp +
+                 "/timestamps", 'ab') as f2:
+            f2.write('N: '+str(kaMod.N)+'\tS: '+str(kaMod.S)+'\ttotRuns: '+str(totRuns)+'\ttime: '+str(time()-startClock)+'\tnormtime: '+str(float(time()-startClock)/(float(kernel._nbrOfThreads)*float(totRuns)))+'\n')
         #do preparations for next run that are not to be done first run
         if kaMod.N != finalN:
             oldPaths = kernel.getPaths()
@@ -235,6 +270,7 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
             # Change S to move acceptance rate in the right direction, some magic
             # numbers here.
             ar=kernel.getAcceptanceRate()
+            
             if ar > 0.5:
                 kaMod.S = min(i - 1, kaMod.S + 2)
             if 0.2 < ar < 0.5:
@@ -242,9 +278,14 @@ def modN(ka, startXList, savePathsInterval, experimentName, opRunsFormula,
             if ar < 0.1:
                 kaMod.S = max(1, kaMod.S - 1)
             kaMod.N *= 2
+            
+            #print 'Letting current queue finish before continuing.'
+            #kernel._queue.finish()
+        print('Overhead time: ' + str(time()-overheadClock + loopClock - loopClockEnd))
+    #kernel._queue.finish()
 
 def _output(filename, N, t, pathChanges, acceptanceRate
-           , operatorMean, beta, S, verbose=False):
+           , operatorMean, hostRunTime, kernelRunTime, beta, S, verbose=False):
     """
     Used by the modN function to save data from a run into a file in ASCII
     format.
@@ -271,6 +312,12 @@ def _output(filename, N, t, pathChanges, acceptanceRate
                          product of the number of operators and the number of
                          independent simulations
 
+    :type kernelRunTime: float
+    :param kernelRunTime: Run time of last Kernel.
+    
+    :type hostRunTime: float
+    :param hostRunTime: Host overhead time between kernel calls.
+                 
     :type beta: float
     :param beta: Euclidian time used for the simulation. Should be constant
                  between runs.
@@ -285,7 +332,7 @@ def _output(filename, N, t, pathChanges, acceptanceRate
     if verbose:
         print("N: " + str(N) + "\tS: " + str(S) + "\tbeta: " +
                 str(beta)+"\tAR: " + str(acceptanceRate) + "\tOPs: " +
-            str(np.mean(operatorMean, axis = 1)))
+            str(np.mean(operatorMean, axis = 1)) + "\tTime: [" + str(hostRunTime) + "," + str(kernelRunTime) + "]")
 
     with open(filename + ".tsv", 'a') as f_data:
         # Add a heading describing the columns if file is empty.
@@ -306,3 +353,71 @@ def _output(filename, N, t, pathChanges, acceptanceRate
             for op in walkerOperators:
                 f_data.write(str(op)+"\t")
         f_data.write("\n")
+
+def plotModN(filename):
+    """    
+    Used to plot the result of result files generated by modN.
+
+    :type: filename: string
+    :param filename: path + filename of the data file.
+    """
+
+    reader = csv.reader(open(filename), delimiter='\t')
+    cleanedData = [row for row in reader if not '#'==row[0][0]]
+    
+    N=np.array([int(row[0]) for row in cleanedData])
+    AR=np.array([float(row[3]) for row in cleanedData])
+    energy=np.array([float(row[6]) for row in cleanedData])
+    meanSquareRadius=np.array([float(row[7]) for row in cleanedData])
+    sys.path.append(sys.path[0] + "/../../FeynSimul/physical_systems/")
+
+    plotData=meanSquareRadius
+    n=N[0]
+
+    end=0
+    ni=0
+    smoothedPlotData=[]
+    while n<=N[-1]:
+        start=end
+        if n==N[-1]:
+            end=len(plotData)
+        else:
+            while N[end]==N[start]:
+                end=end+1
+        smoothedPlotData.append(np.zeros((end-start,2)))
+        smoothness=int(n/512)
+        kernel=np.ndarray(smoothness*2+1)
+        if smoothness==0:
+            kernel[0]=1.0
+        else:
+            for i in range(smoothness*2+1):
+                kernel[i]=np.exp(-((2.0*float(i-smoothness)/float(smoothness))**2.0))
+        for i in range(start,end):
+            tot=0.0
+            for j in range(smoothness*2+1):
+                if i+j-smoothness>start and i+j-smoothness<end:
+                    smoothedPlotData[ni][i-start,0]=smoothedPlotData[ni][i-start,0]+kernel[j]*plotData[i+j-smoothness]
+                    tot=tot+kernel[j]
+            smoothedPlotData[ni][i-start,0]=smoothedPlotData[ni][i-start,0]/tot
+            smoothedPlotData[ni][i-start,1]=i
+        n=2*n
+        ni=ni+1
+    ##present data
+    burnRatio=0.3
+    useIndicies=[i for i in range(len(N)) if N[i]==N[-1]]
+    endBurn=useIndicies[0]+int(float(useIndicies[-1]-useIndicies[0])*burnRatio)
+    useIndicies=range(endBurn,useIndicies[-1]+1)
+    """
+    print("Meaned energy, last N-group: "+str(np.mean([energy[i] for i in useIndicies])*sys.potentialUnit/1.3806503e-23)+' K')
+    a0=0.52917721092e-10
+    print("Root mean square radius, last N-group:
+    "+str(np.sqrt(np.mean([meanSquareRadius[i] for i in
+    useIndicies]))*sys.xUnit/a0)+' a0')"""
+    import matplotlib.pyplot as plt
+    #plt.plot(plotData)
+    for i in smoothedPlotData:
+        plt.plot(i[:,1],i[:,0],label=str(N[i[0,1]]))
+    plt.axis([0.0,len(plotData),-25.0,0.0])
+    plt.grid(True)
+    plt.legend(loc=4)
+    plt.show()
