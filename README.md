@@ -1,4 +1,6 @@
-[![Download Feynman Path Integrals with GPU](https://img.shields.io/sourceforge/dt/feynmangpu.svg)](https://sourceforge.net/projects/feynmangpu/files/latest/download) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Download Feynman Path Integrals with GPU](https://img.shields.io/sourceforge/dt/feynmangpu.svg)](https://sourceforge.net/projects/feynmangpu/files/latest/download) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![DOI](https://zenodo.org/badge/3043696.svg)](https://zenodo.org/badge/latestdoi/3043696)
+
+
 
 FeynSimul
 ========
